@@ -33,8 +33,8 @@ async function serve() {
     await ctx.watch();
     console.log('Watching for changes...');
 
-    await ctx.serve({ port: 8080, servedir: './dist', host: 'localhost' });
-    console.log('Server is running on http://localhost:8080');
+    await ctx.serve({ port: 5641, servedir: './dist', host: 'localhost' });
+    console.log('Server is running on http://localhost:5641');
 }
 
 serve();

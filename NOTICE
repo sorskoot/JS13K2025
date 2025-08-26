@@ -13,5 +13,6 @@ Licensed under the MIT License
 - `src/lib/bufferset.ts`
 - `src/lib/voxelengine.ts`
 
-These files have been modified and adapted for use in this project.
+These files have been modified and adapted for use in this project. Mainly, the code has been converted to TypeScript, instead of WebGL the code now depends on Three.js and code irrelavant for my game is removed or replaced.
+
 All modifications are also licensed under the MIT License.

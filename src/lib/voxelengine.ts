@@ -1,86 +1,47 @@
 /*
-MIT License
-
-Copyright (c) 2020 Cody Ebberson
-https://github.com/codyebberson/js13k-minipunk
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
----
-
-Timmy Kokke, Sorskoot - 2025
-Changes:
-- Converted to TypeScript
-- Changed to Three.js
-
-
+ This file was originally based on Minipunk by Cody Ebberson.
+ See NOTICE for details.
 */
 
 import {Mesh, Scene} from 'three';
 import {BufferSet} from './bufferset';
+import {getTileColor, intbound, signum} from './utils';
 
 /*
  * Dimensions of the world in meters (default unit).
  */
 
+//TODO: The world size is way to big for my version. This needs to be reduced.
+
 /**
  * Size of the world in meters on the x-axis.
  * @const {number}
  */
-let METERS_PER_WORLD_X = 512;
+const METERS_PER_WORLD_X = 10;
 
 /**
  * Size of the world in meters on the y-axis.
  * @const {number}
  */
-let METERS_PER_WORLD_Y = 256;
+const METERS_PER_WORLD_Y = 10;
 
 /**
  * Size of the world in meters on the z-axis.
  * @const {number}
  */
-let METERS_PER_WORLD_Z = 512;
-
-/*
- * Voxel scale.
- * Voxels are not cubes.
- * Voxels are 1 meter tall, 2 meters wide, and 2 meters deep.
- * These are internal constants.
- */
+const METERS_PER_WORLD_Z = 10;
 
 /**
- * Size of a voxel in meters on the x-axis.
+ * Number of voxels per meter.
  * @const {number}
  */
-let VOXEL_SCALE_X = 4;
+const VOXELS_PER_METER = 16;
 
 /**
- * Size of a voxel in meters on the y-axis.
+ * Size of a voxel in meters (uniform across X/Y/Z).
  * @const {number}
  */
-let VOXEL_SCALE_Y = 1;
-
-/**
- * Size of a voxel in meters on the z-axis.
- * @const {number}
- */
-let VOXEL_SCALE_Z = 4;
+const VOXEL_SCALE = 1 / VOXELS_PER_METER;
 
 /*
  * Voxels per world.
@@ -91,94 +52,25 @@ let VOXEL_SCALE_Z = 4;
  * Size of the world in voxels on the x-axis.
  * @const {number}
  */
-let VOXELS_PER_WORLD_X = METERS_PER_WORLD_X / VOXEL_SCALE_X;
+const VOXELS_PER_WORLD_X = METERS_PER_WORLD_X / VOXEL_SCALE;
 
 /**
  * Size of the world in voxels on the y-axis.
  * @const {number}
  */
-let VOXELS_PER_WORLD_Y = METERS_PER_WORLD_Y / VOXEL_SCALE_Y;
+const VOXELS_PER_WORLD_Y = METERS_PER_WORLD_Y / VOXEL_SCALE;
 
 /**
  * Size of the world in voxels on the z-axis.
  * @const {number}
  */
-let VOXELS_PER_WORLD_Z = METERS_PER_WORLD_Z / VOXEL_SCALE_Z;
+const VOXELS_PER_WORLD_Z = METERS_PER_WORLD_Z / VOXEL_SCALE;
 
 /**
  * Empty tile.
  * @const {number}
  */
 let TILE_EMPTY = 0;
-let TILE_DARK_GRASS = 3;
-let TILE_STONE = 9;
-let TILE_DARK_STONE = 10;
-let TILE_CYAN_WINDOW_ON = 20;
-let TILE_CYAN_WINDOW_OFF = 21;
-let TILE_PINK_WINDOW_ON = 22;
-let TILE_PINK_WINDOW_OFF = 23;
-let TILE_YELLOW_WINDOW_ON = 24;
-let TILE_YELLOW_WINDOW_OFF = 25;
-let TILE_WHITE_WINDOW_ON = 26;
-let TILE_WHITE_WINDOW_OFF = 27;
-let TILE_RED = 28;
-let TILE_WHITE = 29;
-let TILE_SIDEWALK = 30;
-
-/**
- * Returns a color for the given tile type.
- * @param {number} tile The tyle type.
- * @return {number} The tile color.
- */
-function getTileColor(tile) {
-    // switch (tile) {
-    //     case TILE_DARK_GRASS:
-    //         return createHsvColor(116 / 360.0, randomBetween(0.55, 0.6), randomBetween(0.45, 0.5));
-    //     case TILE_CYAN_WINDOW_ON:
-    //         return createColor(64, 255, 255);
-    //     case TILE_CYAN_WINDOW_OFF:
-    //         return createColor(32, 128, 128);
-    //     case TILE_PINK_WINDOW_ON:
-    //         return createColor(255, 64, 255);
-    //     case TILE_PINK_WINDOW_OFF:
-    //         return createColor(128, 32, 128);
-    //     case TILE_YELLOW_WINDOW_ON:
-    //         return createColor(255, 128, 64);
-    //     case TILE_YELLOW_WINDOW_OFF:
-    //         return createColor(128, 64, 32);
-    //     case TILE_WHITE_WINDOW_ON:
-    //         return createColor(255, 255, 255);
-    //     case TILE_WHITE_WINDOW_OFF:
-    //         return createColor(128, 128, 128);
-    //     case TILE_STONE:
-    //         return createHsvColor(0, 0, randomBetween(0.5, 0.6));
-    //     case TILE_DARK_STONE:
-    //         return createHsvColor(0, 0, randomBetween(0.2, 0.22));
-    //     case TILE_RED:
-    //         return createColor(128, 0, 0);
-    //     case TILE_WHITE:
-    //         return createColor(224, 224, 224);
-    // }
-    return 0;
-}
-/**
- * Returns the sign of the number
- * @param {number} x
- * @return {number}
- */
-function signum(x) {
-    return x > 0 ? 1 : x < 0 ? -1 : 0;
-}
-
-/**
- * Safe mod, works with negative numbers.
- * @param {number} value
- * @param {number} modulus
- * @return {number}
- */
-function mod(value, modulus) {
-    return ((value % modulus) + modulus) % modulus;
-}
 
 export class VoxelEngine {
     data: Uint8Array<ArrayBuffer>;
@@ -224,9 +116,9 @@ export class VoxelEngine {
      * @return {number}
      */
     getIndex(x, y, z) {
-        let x2 = (x / VOXEL_SCALE_X) | 0;
-        let y2 = (y / VOXEL_SCALE_Y) | 0;
-        let z2 = (z / VOXEL_SCALE_Z) | 0;
+        let x2 = (x / VOXEL_SCALE) | 0;
+        let y2 = (y / VOXEL_SCALE) | 0;
+        let z2 = (z / VOXEL_SCALE) | 0;
         return z2 * VOXELS_PER_WORLD_X * VOXELS_PER_WORLD_Y + y2 * VOXELS_PER_WORLD_X + x2;
     }
 
@@ -251,7 +143,7 @@ export class VoxelEngine {
      * @param {number} z
      * @param {number} v The tile type.
      */
-    setCube(x, y, z, v) {
+    setCube(x: number, y: number, z: number, v: number) {
         if (this.isOutOfRange(x, y, z)) {
             return;
         }
@@ -285,31 +177,31 @@ export class VoxelEngine {
                     if (t === TILE_EMPTY) {
                         continue;
                     }
-                    let x1 = x * VOXEL_SCALE_X;
-                    let y1 = y * VOXEL_SCALE_Y;
-                    let z1 = z * VOXEL_SCALE_Z;
+                    let x1 = x * VOXEL_SCALE;
+                    let y1 = y * VOXEL_SCALE;
+                    let z1 = z * VOXEL_SCALE;
 
-                    if (this.isEmpty(x1, y1 + VOXEL_SCALE_Y, z1)) {
+                    if (this.isEmpty(x1, y1 + VOXEL_SCALE, z1)) {
                         count++; // top
                     }
 
-                    if (this.isEmpty(x1, y1 - 1, z1)) {
+                    if (this.isEmpty(x1, y1 - VOXEL_SCALE, z1)) {
                         count++; // bottom
                     }
 
-                    if (this.isEmpty(x1, y1, z1 + VOXEL_SCALE_Z)) {
+                    if (this.isEmpty(x1, y1, z1 + VOXEL_SCALE)) {
                         count++; // north
                     }
 
-                    if (this.isEmpty(x1, y1, z1 - 1)) {
+                    if (this.isEmpty(x1, y1, z1 - VOXEL_SCALE)) {
                         count++; // south
                     }
 
-                    if (this.isEmpty(x1 - 1, y1, z1)) {
+                    if (this.isEmpty(x1 - VOXEL_SCALE, y1, z1)) {
                         count++; // west
                     }
 
-                    if (this.isEmpty(x1 + VOXEL_SCALE_X, y1, z1)) {
+                    if (this.isEmpty(x1 + VOXEL_SCALE, y1, z1)) {
                         count++; // east
                     }
                 }
@@ -317,9 +209,6 @@ export class VoxelEngine {
         }
 
         this.bufferSet = new BufferSet();
-
-        // Add the skybox
-        //this.bufferSet.addCube(0, 0, 0, 2048, createColor(124, 173, 203));
 
         i = 0;
         for (let z = 0; z < VOXELS_PER_WORLD_Z; z++) {
@@ -332,13 +221,13 @@ export class VoxelEngine {
 
                     let color = getTileColor(t);
 
-                    let x1 = x * VOXEL_SCALE_X;
-                    let y1 = y * VOXEL_SCALE_Y;
-                    let z1 = z * VOXEL_SCALE_Z;
+                    let x1 = x * VOXEL_SCALE;
+                    let y1 = y * VOXEL_SCALE;
+                    let z1 = z * VOXEL_SCALE;
 
-                    let x2 = x1 + VOXEL_SCALE_X;
-                    let y2 = y1 + VOXEL_SCALE_Y;
-                    let z2 = z1 + VOXEL_SCALE_Z;
+                    let x2 = x1 + VOXEL_SCALE;
+                    let y2 = y1 + VOXEL_SCALE;
+                    let z2 = z1 + VOXEL_SCALE;
 
                     let p1 = new THREE.Vector3(x1, y2, z2);
                     let p2 = new THREE.Vector3(x2, y2, z2);
@@ -349,27 +238,27 @@ export class VoxelEngine {
                     let p7 = new THREE.Vector3(x2, y1, z1);
                     let p8 = new THREE.Vector3(x1, y1, z1);
 
-                    if (this.isEmpty(x1, y1 + VOXEL_SCALE_Y, z1)) {
+                    if (this.isEmpty(x1, y1 + VOXEL_SCALE, z1)) {
                         this.bufferSet.addQuad([p1, p2, p3, p4], color); // top
                     }
 
-                    if (this.isEmpty(x1, y1 - 1, z1)) {
+                    if (this.isEmpty(x1, y1 - VOXEL_SCALE, z1)) {
                         this.bufferSet.addQuad([p8, p7, p6, p5], color); // bottom
                     }
 
-                    if (this.isEmpty(x1, y1, z1 + VOXEL_SCALE_Z)) {
+                    if (this.isEmpty(x1, y1, z1 + VOXEL_SCALE)) {
                         this.bufferSet.addQuad([p2, p1, p5, p6], color); // north
                     }
 
-                    if (this.isEmpty(x1, y1, z1 - 1)) {
+                    if (this.isEmpty(x1, y1, z1 - VOXEL_SCALE)) {
                         this.bufferSet.addQuad([p4, p3, p7, p8], color); // south
                     }
 
-                    if (this.isEmpty(x1 - 1, y1, z1)) {
+                    if (this.isEmpty(x1 - VOXEL_SCALE, y1, z1)) {
                         this.bufferSet.addQuad([p1, p4, p8, p5], color); // west
                     }
 
-                    if (this.isEmpty(x1 + VOXEL_SCALE_X, y1, z1)) {
+                    if (this.isEmpty(x1 + VOXEL_SCALE, y1, z1)) {
                         this.bufferSet.addQuad([p3, p2, p6, p7], color); // east
                     }
                 }
@@ -421,33 +310,19 @@ export class VoxelEngine {
      * @return {?number} Undefined if no collision; the distance if collision.
      */
     raycast(origin, direction, radius) {
-        // From "A Fast Voxel Traversal Algorithm for Ray Tracing"
-        // by John Amanatides and Andrew Woo, 1987
-        // <http://www.cse.yorku.ca/~amana/research/grid.pdf>
-        // <http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.3443>
-        // Extensions to the described algorithm:
-        //   • Imposed a distance limit.
-        //   • The face passed through to reach the current cube is provided to
-        //     the callback.
+        // Convert to voxel-space so the algorithm assumes unit-sized cubes.
+        let sOrigin = [origin[0] / VOXEL_SCALE, origin[1] / VOXEL_SCALE, origin[2] / VOXEL_SCALE];
+        let sDirection = [direction[0] / VOXEL_SCALE, direction[1] / VOXEL_SCALE, direction[2] / VOXEL_SCALE];
 
-        // The foundation of this algorithm is a parameterized representation of
-        // the provided ray,
-        //                    origin + t * direction,
-        // except that t is not actually stored; rather, at any given point in the
-        // traversal, we keep track of the *greater* t values which we would have
-        // if we took a step sufficient to cross a cube boundary along that axis
-        // (i.e. change the integer part of the coordinate) in the variables
-        // tMaxX, tMaxY, and tMaxZ.
+        // Cube containing origin point (in voxel coords).
+        var x = Math.floor(sOrigin[0]);
+        var y = Math.floor(sOrigin[1]);
+        var z = Math.floor(sOrigin[2]);
 
-        // Cube containing origin point.
-        var x = Math.floor(origin[0]);
-        var y = Math.floor(origin[1]);
-        var z = Math.floor(origin[2]);
-
-        // Break out direction vector.
-        var dx = direction[0];
-        var dy = direction[1];
-        var dz = direction[2];
+        // Break out direction vector (in voxel coords).
+        var dx = sDirection[0];
+        var dy = sDirection[1];
+        var dz = sDirection[2];
 
         // Direction to increment x,y,z when stepping.
         var stepX = signum(dx);
@@ -456,9 +331,9 @@ export class VoxelEngine {
 
         // See description above. The initial values depend on the fractional
         // part of the origin.
-        var tMaxX = intbound(origin[0], dx);
-        var tMaxY = intbound(origin[1], dy);
-        var tMaxZ = intbound(origin[2], dz);
+        var tMaxX = intbound(sOrigin[0], dx);
+        var tMaxY = intbound(sOrigin[1], dy);
+        var tMaxZ = intbound(sOrigin[2], dz);
 
         // The change in t when taking a step (always positive).
         var tDeltaX = stepX / dx;
@@ -466,13 +341,15 @@ export class VoxelEngine {
         var tDeltaZ = stepZ / dz;
 
         // Buffer for reporting faces to the callback.
-        var face = {x: 0, y: 0, z: 0};
+        var face = [0, 0, 0];
 
         // Avoids an infinite loop.
         if (dx === 0 && dy === 0 && dz === 0) {
             throw new RangeError();
         }
 
+        // Convert radius into voxel-space units before normalizing by |direction|.
+        radius = radius / VOXEL_SCALE;
         // Rescale from units of 1 cube-edge to units of 'direction' so we can
         // compare with 't'.
         radius /= Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -483,36 +360,36 @@ export class VoxelEngine {
             if (face[0] > 0) {
                 // Stepping west
                 if (!this.isEmpty(x, y, z) || !this.isEmpty(x - 1, y, z)) {
-                    return t;
+                    return t * VOXEL_SCALE;
                 }
             } else if (face[0] < 0) {
                 // Stepping east
                 if (!this.isEmpty(x, y, z) || !this.isEmpty(x + 1, y, z)) {
-                    return t;
+                    return t * VOXEL_SCALE;
                 }
             }
 
             if (face[1] > 0) {
                 // Stepping down
                 if (!this.isEmpty(x, y, z) || !this.isEmpty(x, y - 1, z)) {
-                    return t;
+                    return t * VOXEL_SCALE;
                 }
             } else if (face[1] < 0) {
                 // Stepping up
                 if (!this.isEmpty(x, y, z) || !this.isEmpty(x, y + 1, z)) {
-                    return t;
+                    return t * VOXEL_SCALE;
                 }
             }
 
             if (face[2] > 0) {
                 // Stepping south
                 if (!this.isEmpty(x, y, z) || !this.isEmpty(x, y, z - 1)) {
-                    return t;
+                    return t * VOXEL_SCALE;
                 }
             } else if (face[2] < 0) {
                 // Stepping north
                 if (!this.isEmpty(x, y, z) || !this.isEmpty(x, y, z + 1)) {
-                    return t;
+                    return t * VOXEL_SCALE;
                 }
             }
 
@@ -573,21 +450,5 @@ export class VoxelEngine {
         }
 
         return null;
-    }
-}
-
-/**
- * Find the smallest positive t such that s+t*ds is an integer.
- * @param {number} s
- * @param {number} ds
- * @return {number}
- */
-function intbound(s, ds) {
-    if (ds < 0) {
-        return intbound(-s, -ds);
-    } else {
-        s = mod(s, 1);
-        // problem is now s+t*ds = 1
-        return (1 - s) / ds;
     }
 }

@@ -1,0 +1,9 @@
+# TODO
+
+Voxel Engine:
+    Decisions to make:
+        ☐ Figure out how large the world should be
+        ☐ Are the walls going to be voxels too?
+        ☐ Materials or colors?
+        ☐ Do we keep the raytracing?
+        ☐ Lighting?
