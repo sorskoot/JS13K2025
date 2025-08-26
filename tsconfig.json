@@ -3,13 +3,13 @@
         "forceConsistentCasingInFileNames": true,
         "pretty": true,
         "allowJs": true,
-        "strict":true,
+        "strict": true,
         "noEmit": true,
         "noImplicitAny": false,
         "noImplicitOverride": true,
         "strictNullChecks": true,
         "target": "esnext",
-        "module": "nodenext",
+        "module": "NodeNext",
         "resolveJsonModule": true,
         "moduleResolution": "nodenext",
         "outDir": "dist",
@@ -19,7 +19,7 @@
         "types": ["aframe"]
     },
     "exclude": ["node_modules"],
-    "include": ["src/**/*","src/**/.vert","src/**/.frag"],
+    "include": ["src/**/*", "src/**/.vert", "src/**/.frag", "src/types/**/*.d.ts"],
     "typedocOptions": {
         "entryPoints": ["./src/index.ts"],
         "out": "docs"

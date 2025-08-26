@@ -7,7 +7,7 @@ async function serve() {
     let ctx = await esbuild.context({
         entryPoints: ['./src/index.ts'],
         bundle: true,
-        external: ['aframe'], // Mark A-Frame as external
+        external: ['aframe', 'three'], // Mark A-Frame and Three.js as external
         platform: 'browser',
         minify: false,
         sourcemap: true,
@@ -20,7 +20,7 @@ async function serve() {
             dest: './dist', // Destination directory
         })
         ],
-        
+
         loader: {
             '.vs': 'text',
             '.fs': 'text',

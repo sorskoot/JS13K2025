@@ -1,0 +1,17 @@
+# NOTICE
+
+This project includes code derived from the following sources:
+
+## Cody Ebberson's Minipunk Project
+
+<https://github.com/codyebberson/js13k-minipunk>  
+Copyright © 2020 Cody Ebberson  
+Licensed under the MIT License
+
+### Derived Files
+
+- `src/lib/bufferset.ts`
+- `src/lib/voxelengine.ts`
+
+These files have been modified and adapted for use in this project.
+All modifications are also licensed under the MIT License.
