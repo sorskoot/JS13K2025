@@ -4,8 +4,8 @@
 */
 
 import {Mesh, Scene} from 'three';
-import {BufferSet} from './bufferset';
-import {getTileColor, intbound, signum} from './utils';
+import {BufferSet} from './bufferset.js';
+import {getTileColor, intbound, signum} from './utils.js';
 
 /*
  * Dimensions of the world in meters (default unit).
@@ -35,13 +35,13 @@ const METERS_PER_WORLD_Z = 10;
  * Number of voxels per meter.
  * @const {number}
  */
-const VOXELS_PER_METER = 16;
+export const VOXELS_PER_METER = 8;
 
 /**
  * Size of a voxel in meters (uniform across X/Y/Z).
  * @const {number}
  */
-const VOXEL_SCALE = 1 / VOXELS_PER_METER;
+export const VOXEL_SCALE = 1 / VOXELS_PER_METER;
 
 /*
  * Voxels per world.

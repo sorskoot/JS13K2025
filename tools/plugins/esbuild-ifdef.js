@@ -1,7 +1,6 @@
-const util = require("util");
-const fs = require("fs");
-const path = require("path");
-const readFile = util.promisify(fs.readFile);
+import fs from "fs";
+import path from "path";
+import { readFile } from "fs/promises";
 
 // This array stores identifiers that are considered "defined".
 // Values are populated from the provided env (defaults to process.env).
@@ -174,7 +173,7 @@ const DEFAULT_EXCLUDE_LIST = ["dist", "vendor", "node_modules", ".git"];
 // This is the esbuild plugin factory function.
 // It receives the environment, base directory, and exclude list.
 // The exclude list defaults to common Vite exclude patterns.
-module.exports = (
+export const ifdef = (
     env = process.env,
     _baseDir = process.cwd(),
     exclude = DEFAULT_EXCLUDE_LIST

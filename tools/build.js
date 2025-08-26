@@ -1,7 +1,7 @@
 // build.js
-const esbuild = require('esbuild');
-const { webglPlugin } = require('esbuild-plugin-webgl');
-const copyStaticFiles = require('esbuild-copy-static-files');
+import * as esbuild from 'esbuild';
+import { webglPlugin } from 'esbuild-plugin-webgl';
+import copyStaticFiles from 'esbuild-copy-static-files';
 
 async function serve() {
     let ctx = await esbuild.context({
@@ -10,6 +10,7 @@ async function serve() {
         external: ['aframe', 'three'], // Mark A-Frame and Three.js as external
         platform: 'browser',
         minify: false,
+        define: { DEBUG: "true" },
         sourcemap: true,
         target: 'ES2022',
         format: 'esm',

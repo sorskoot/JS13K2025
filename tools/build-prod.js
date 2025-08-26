@@ -1,13 +1,13 @@
 // build.js
-const esbuild = require('esbuild');
-const { webglPlugin } = require('esbuild-plugin-webgl');
-const fs = require('fs');
-const { minify } = require('terser');
-const ifdef = require("./plugins/esbuild-ifdef");
-const copyStaticFiles = require('esbuild-copy-static-files');
+import * as esbuild from 'esbuild';
+import { webglPlugin } from 'esbuild-plugin-webgl';
+import * as fs from 'fs';
+import { minify } from 'terser';
+import copyStaticFiles from 'esbuild-copy-static-files';
 
 const define = {
-    "process.env.DEBUG": "false"
+    "process.env.DEBUG": "false",
+    DEBUG: "false"
 };
 
 esbuild.build({
@@ -15,7 +15,7 @@ esbuild.build({
     bundle: true,
     minify: false,
     drop: ['console'],
-    external: ['aframe'], // Mark A-Frame as external
+    external: ['aframe', 'three'], // Mark A-Frame and Three.js as external
     target: 'ES2022',
     format: 'esm',
     outfile: './dist/bundle.js',
@@ -26,7 +26,6 @@ esbuild.build({
             dest: './dist', // Destination directory
         }),
         webglPlugin(),
-        ifdef(define)
     ],
     metafile: true,
     loader: {
@@ -38,7 +37,6 @@ esbuild.build({
     },
 })
     .then(result => {
-        const fs = require('fs');
         const code = fs.readFileSync('dist/bundle.js', 'utf8');
 
         // Minify with Terser
