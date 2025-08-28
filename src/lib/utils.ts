@@ -7,16 +7,42 @@ export function createColor(r: number, g: number, b: number) {
  * @param {number} tile The tyle type.
  * @return {number} The tile color.
  */
-export function getTileColor(tile) {
+export function getTileColor(tile: number) {
     switch (tile) {
+        case 0:
+            return createColor(0, 0, 0); // Black
         case 1:
-            return createColor(255, 0, 0);
+            return createColor(0, 0, 170); // Blue
         case 2:
-            return createColor(0, 255, 0);
+            return createColor(0, 170, 0); // Green
         case 3:
-            return createColor(0, 0, 255);
+            return createColor(0, 170, 170); // Cyan
+        case 4:
+            return createColor(170, 0, 0); // Red
+        case 5:
+            return createColor(170, 0, 170); // Magenta
+        case 6:
+            return createColor(170, 85, 0); // Brown
+        case 7:
+            return createColor(170, 170, 170); // Light gray
+        case 8:
+            return createColor(85, 85, 85); // Dark gray
+        case 9:
+            return createColor(85, 85, 255); // Bright blue
+        case 10:
+            return createColor(85, 255, 85); // Bright green
+        case 11:
+            return createColor(85, 255, 255); // Bright cyan
+        case 12:
+            return createColor(255, 85, 85); // Bright red
+        case 13:
+            return createColor(255, 85, 255); // Bright magenta
+        case 14:
+            return createColor(255, 255, 85); // Yellow
+        case 15:
+            return createColor(255, 255, 255); // White
         default:
-            return createColor(255, 255, 255);
+            return createColor(255, 255, 255); // Fallback to white
     }
 }
 /**

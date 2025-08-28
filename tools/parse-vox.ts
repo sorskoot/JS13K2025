@@ -112,12 +112,28 @@ fs.readFile(inputPath, (err: NodeJS.ErrnoException | null, buffer: Buffer) => {
 
     parsed.XYZI.forEach((voxel) => {
         const {x, y, z, c} = voxel;
-
+        console.log(`Voxel at (${x},${y},${z}) with color ${c}`);
         // write the data in bits. Assume max size 8x8x8 for now
+        // per voxel, we want to use 4 bits to identify the color.
+        // So each x row is a bitfield of 4-bit color values.
+        // e.g. if we have voxels at (0,0,0) with color 3 and (2,0,0) with color 5,
+        // then row 0 (y=0,z=0) would be: 0b01010011 = 0x53
+        // We can store two colors per byte, so we need Math.ceil(size.x / 2) bytes per row.
+        // We'll store rows in an array indexed by z, then y.
+        // So output.data[z][y] = bitfield for that row.
         if (!output.data[z]) {
             output.data[z] = [];
         }
-        output.data[z][y] = (output.data[z][y] || 0) | (1 << x);
+        if (output.data[z][y] === undefined) {
+            output.data[z][y] = 0;
+        }
+        // Pack 4-bit color values, two colors per byte.
+        // For voxel at x: determine which byte and which nibble (low/high) to store the color.
+        const byteIndex = Math.floor(x / 2);
+        const nibbleShift = x % 2 === 0 ? 0 : 4;
+        const shift = byteIndex * 8 + nibbleShift; // place nibble inside the correct byte
+        const colorNibble = (c & 0xf) << shift;
+        output.data[z][y] = output.data[z][y] | colorNibble;
     });
 
     fs.writeFile(outputPath, JSON.stringify(output, null, 2), (werr: NodeJS.ErrnoException | null) => {
