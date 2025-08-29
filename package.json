@@ -4,12 +4,11 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
-        "copyHtml": "copyfiles -a -u 1 ./static/**/* ./dist",
-        "build-old": "esbuild ./src/index.ts --bundle --minify --drop:console --target=ES2022 --format=esm --outfile=./dist/index.js && npm run copyHtml",
         "build": "node ./tools/build.js",
         "build:prod": "node ./tools/build-prod.js",
         "build:watch": "esbuild ./src/index.ts --bundle --minify --sourcemap --watch --target=ES2022 --format=esm --outfile=./dist/index.js --servedir=dist ",
         "build:meta": "esbuild ./src/index.ts --bundle --minify --drop:console --target=ES2022 --format=esm --outfile=./dist/index.js --metafile=meta.json && npm run copyHtml",
+        "parse-vox": "cd tools && node parse-vox.ts Mouse.vox",
         "test": "echo \"Error: no test specified\" && exit 1",
         "doc": "typedoc --out docs --entryPointStrategy Expand ./src --watch",
         "doc:run": "http-server docs -o -c-1 -p 7777",
