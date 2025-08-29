@@ -7,9 +7,13 @@ AFRAME.registerComponent('paw', {
         // Create a voxel engine instance
         const engine = new VoxelEngine();
 
-        const paw =
-            '11000000,00000000,11100000,21100000|0000001123223201333222202333232033322220232232010000001111111111|6,7';
-        addModelFromEncoded(paw, engine, new THREE.Vector3(0, 0, 0));
+        const paw = [
+            '11000000,11100000,00000000|0000000011111111111111111111111111111111111111110000000022222222|6',
+            '11000000,00000000,11100000,21100000|0000001123223201333222202333232033322220232232010000001111111111|6,12',
+        ];
+
+        addModelFromEncoded(paw[0], engine, new THREE.Vector3(0, 0, 0));
+        addModelFromEncoded(paw[1], engine, new THREE.Vector3(0, 0, 1));
 
         // Generate a mesh or geometry from the engine
         const voxelMesh = engine.getMesh();

@@ -4,7 +4,10 @@ import parseMagicaVoxel from 'parse-magica-voxel';
 const inputPath = process.argv[2] || 'tools/Mouse.vox';
 const buffer = fs.readFileSync(inputPath);
 const parsed: any = parseMagicaVoxel(buffer);
+
+// temporary file to inspect parsed structure
 fs.writeFileSync('test.json', JSON.stringify(parsed, null, 2));
+
 // Reconstruct paletteArray like parse-vox.ts
 const paletteMap = new Map<number, number>();
 const paletteArray: number[] = [];
