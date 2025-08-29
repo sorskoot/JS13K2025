@@ -10,7 +10,7 @@ export function createColor(r: number, g: number, b: number) {
 export function getTileColor(tile: number) {
     switch (tile) {
         case 0:
-            return createColor(0, 0, 0); // Black
+            return createColor(0, 0, 0); // Not Rendering (Was Black)
         case 1:
             return createColor(0, 0, 170); // Blue
         case 2:
@@ -22,7 +22,7 @@ export function getTileColor(tile: number) {
         case 5:
             return createColor(170, 0, 170); // Magenta
         case 6:
-            return createColor(170, 85, 0); // Brown
+            return createColor(0, 0, 0); // Black(was Brown)
         case 7:
             return createColor(170, 170, 170); // Light gray
         case 8:

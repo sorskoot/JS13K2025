@@ -288,13 +288,13 @@ fs.readFile(inputPath, (err: NodeJS.ErrnoException | null, buffer: Buffer) => {
 
     // Build paletteCSV mapping localIndex -> engineIndex by nearest color in parsed.RGBA
     const ENGINE_PALETTE: [number, number, number][] = [
-        [0, 0, 0],
+        [-1, -1, -1], // index 0 = empty and does not render
         [0, 0, 170],
         [0, 170, 0],
         [0, 170, 170],
         [170, 0, 0],
         [170, 0, 170],
-        [170, 85, 0],
+        [0, 0, 0],
         [170, 170, 170],
         [85, 85, 85],
         [85, 85, 255],

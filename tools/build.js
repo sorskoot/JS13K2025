@@ -15,11 +15,12 @@ async function serve() {
         target: 'ES2022',
         format: 'esm',
         outfile: './dist/index.js',
-        plugins: [webglPlugin(),
-        copyStaticFiles({
-            src: './static', // Source directory
-            dest: './dist', // Destination directory
-        })
+        plugins: [
+            webglPlugin(),
+            copyStaticFiles({
+                src: './static', // Source directory
+                dest: './dist', // Destination directory
+            }),
         ],
 
         loader: {
