@@ -18,7 +18,8 @@ export class BufferSet {
         this.geometry = new THREE.BufferGeometry();
         this.material = new THREE.MeshStandardMaterial({vertexColors: true});
         this.mesh = new THREE.Mesh(this.geometry, this.material);
-
+        this.mesh.castShadow = true;
+        this.mesh.receiveShadow = true;
         this.positions = [];
         this.colors = [];
         this.normals = [];
