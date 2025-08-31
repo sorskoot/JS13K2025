@@ -20,9 +20,9 @@ You are a coding assistant that helps me (Sorskoot) build a entry for the 2025 J
 
 Some sort of shooter in the style of COD and Rainbow Siege. You play as the Special Ops Black CAT and need to fight against mice in a house. Very ambitious, but let's see how far we can get.
 
-For now the game uses a custom Voxel Engine that is adapted to use ThreeJS.
+For now the game uses a custom Voxel Engine that is adapted to use ThreeJS. We have a custom encoder/decoder for .vox files that is optimized for size. The game will be a VR shooter using WebXR and A-Frame.
 
-Challenges:
+## Challenges
 
 -   Creating an interesting level. Walls are doable, but the house needs to be filled with furniture.
 -   Cute cat paws instead of controllers. How to hold a gun?
