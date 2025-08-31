@@ -16,6 +16,7 @@ AFRAME.registerComponent('hello-world', {
         addModelFromEncoded(mouse, engine, new THREE.Vector3(1.5, 0.125, 0));
         addModelFromEncoded(mouse, engine, new THREE.Vector3(3, 0.125, 0));
         addModelFromEncoded(mouse, engine, new THREE.Vector3(4.5, 0.125, 0));
+        addModelFromEncoded(mouse, engine, new THREE.Vector3(6, 0.125, 0));
 
         const floor =
             '10000000,20000000,30000000|0001000101120112011201121222122200010001011201120112011212221222|7,8,15';

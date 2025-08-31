@@ -39,6 +39,7 @@
         "terser": "^5.31.6",
         "ts-node": "^10.9.2",
         "typedoc": "^0.26.5",
-        "typescript": "^5.5.4"
+        "typescript": "^5.5.4",
+        "advzip-bin": "^2.0.0"
     }
 }
