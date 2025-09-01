@@ -46,7 +46,7 @@ Challenges:
 - How to detect shooting when a chair is in the way?
 - Enemy AI?
 
-Maybe with
+Maybe mice can run from mousehole to mousecehole.
 
 ## Idea 3 - Rooftop Run
 

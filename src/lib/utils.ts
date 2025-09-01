@@ -1,6 +1,13 @@
 export function createColor(r: number, g: number, b: number) {
     return 0xff000000 + (r << 16) + (g << 8) + b;
 }
+const paletteRGB = [
+    0x0, 0xffd9d3d9, 0xffb8b0b9, 0xff9a919b, 0xff6d606d, 0xff000000, 0xff2a202a, 0xffc28683, 0xffa7776b, 0xff865d56,
+    0xff694744, 0xff3e2730, 0xff8a2e3f, 0xffa83f48, 0xffc55650, 0xffd37755, 0xffdc995d, 0xffdec575, 0xffa8b164,
+    0xff6f975e, 0xff3b6b58, 0xff2d494b, 0xff466f77, 0xff6c9ba7, 0xff9db8c5, 0xff7e8aa7, 0xff524f73, 0xff483355,
+    0xff613661, 0xff823e69, 0xffb6607c, 0xffd3a092, 0xffd6b7b1, 0xff5f80a6, 0xff566794, 0xff74628f, 0xff6c437a,
+    0xff54373a, 0xff612b38, 0xff36373d, 0xff432d42,
+];
 
 /**
  * Returns a color for the given tile type.
@@ -8,42 +15,7 @@ export function createColor(r: number, g: number, b: number) {
  * @return {number} The tile color.
  */
 export function getTileColor(tile: number) {
-    switch (tile) {
-        case 0:
-            return createColor(0, 0, 0); // Not Rendering (Was Black)
-        case 1:
-            return createColor(0, 0, 170); // Blue
-        case 2:
-            return createColor(0, 170, 0); // Green
-        case 3:
-            return createColor(0, 170, 170); // Cyan
-        case 4:
-            return createColor(170, 0, 0); // Red
-        case 5:
-            return createColor(170, 0, 170); // Magenta
-        case 6:
-            return createColor(0, 0, 0); // Black(was Brown)
-        case 7:
-            return createColor(170, 170, 170); // Light gray
-        case 8:
-            return createColor(85, 85, 85); // Dark gray
-        case 9:
-            return createColor(85, 85, 255); // Bright blue
-        case 10:
-            return createColor(85, 255, 85); // Bright green
-        case 11:
-            return createColor(85, 255, 255); // Bright cyan
-        case 12:
-            return createColor(255, 85, 85); // Bright red
-        case 13:
-            return createColor(255, 85, 255); // Bright magenta
-        case 14:
-            return createColor(255, 255, 85); // Yellow
-        case 15:
-            return createColor(255, 255, 255); // White
-        default:
-            return createColor(255, 255, 255); // Fallback to white
-    }
+    return paletteRGB[tile] || 0xffffffff;
 }
 /**
  * Returns the sign of the number

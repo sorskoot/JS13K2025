@@ -2,8 +2,18 @@
 
 Voxel Engine:
     Decisions to make:
-        ☐ Figure out how large the world should be
+        ✔ Figure out how large the world should be @done(25-09-01 22:32)
         ☐ Are the walls going to be voxels too?
         ☐ Materials or colors?
         ☐ Do we keep the raytracing?
         ☐ Lighting?
+
+
+Must Have:
+    ☐ Moving Mice
+
+Should Have:
+
+Could Have:
+
+Would like:
