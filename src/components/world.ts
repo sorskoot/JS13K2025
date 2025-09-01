@@ -1,10 +1,8 @@
 import {VoxelEngine, VOXELS_PER_METER} from '../lib/voxelengine.js';
 import {addModelFromEncoded} from '../lib/encoder.js';
 
-AFRAME.registerComponent('hello-world', {
+AFRAME.registerComponent('world', {
     init: function () {
-        console.log('Hello, A-Frame with TypeScript!');
-
         // Create a voxel engine instance
         const engine = new VoxelEngine();
 

@@ -1,0 +1,146 @@
+{
+    "A-Frame Component (filename-based)": {
+        "scope": "typescript",
+        "prefix": ["af:comp", "af:c"],
+        "description": "Create a typed A-Frame component; name defaults to current filename (no extension).",
+        "body": [
+            "import type {Component} from 'aframe';",
+            "import type {DataOf} from '../lib/aframe-utils.js';",
+            "",
+            "const schema = {",
+            "    // example: myProp: { type: 'number', default: 0 },",
+            "} as const;",
+            "",
+            "type ${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data = DataOf<typeof schema>;",
+            "",
+            "AFRAME.registerComponent('${TM_FILENAME_BASE}', {",
+            "    schema,",
+            "    init: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>) {",
+            "        $0",
+            "    },",
+            "});"
+        ]
+    },
+    "A-Frame schema prop (string)": {
+        "scope": "typescript",
+        "prefix": ["af:p:string"],
+        "description": "Insert an A-Frame schema string property",
+        "body": ["${1:name}: { type: 'string', default: '${2:}' },$0"]
+    },
+    "A-Frame schema prop (number)": {
+        "scope": "typescript",
+        "prefix": ["af:p:number"],
+        "description": "Insert an A-Frame schema number property",
+        "body": ["${1:name}: { type: 'number', default: ${2:0} },$0"]
+    },
+    "A-Frame schema prop (int)": {
+        "scope": "typescript",
+        "prefix": ["af:p:int"],
+        "description": "Insert an A-Frame schema int property",
+        "body": ["${1:name}: { type: 'int', default: ${2:0} },$0"]
+    },
+    "A-Frame schema prop (boolean)": {
+        "scope": "typescript",
+        "prefix": ["af:p:bool", "af:param:boolean"],
+        "description": "Insert an A-Frame schema boolean property",
+        "body": ["${1:name}: { type: 'boolean', default: ${2:false} },$0"]
+    },
+    "A-Frame schema prop (color)": {
+        "scope": "typescript",
+        "prefix": ["af:p:color"],
+        "description": "Insert an A-Frame schema color property (hex)",
+        "body": ["${1:color}: { type: 'color', default: '${2:#FFFFFF}' },$0"]
+    },
+    "A-Frame schema prop (vec3)": {
+        "scope": "typescript",
+        "prefix": ["af:p:vec3"],
+        "description": "Insert an A-Frame schema vec3 property",
+        "body": ["${1:position}: { type: 'vec3', default: { x: ${2:0}, y: ${3:0}, z: ${4:0} } },$0"]
+    },
+    "A-Frame schema prop (array)": {
+        "scope": "typescript",
+        "prefix": ["af:p:array"],
+        "description": "Insert an A-Frame schema array property (comma-separated string parsed)",
+        "body": ["${1:list}: { type: 'array', default: '${2:one,two,three}' },$0"]
+    },
+    "A-Frame schema prop (selector)": {
+        "scope": "typescript",
+        "prefix": ["af:p:selector"],
+        "description": "Insert an A-Frame schema selector property (CSS selector string)",
+        "body": ["${1:target}: { type: 'selector' },$0"]
+    },
+    "A-Frame schema prop (selectorAll)": {
+        "scope": "typescript",
+        "prefix": ["af:p:selectors"],
+        "description": "Insert an A-Frame schema selectorAll property (returns array of elements)",
+        "body": ["${1:targets}: { type: 'selectorAll' },$0"]
+    },
+    "A-Frame component method (init)": {
+        "scope": "typescript",
+        "prefix": ["af:m:init", "af:method:init"],
+        "description": "Insert A-Frame component init method (typed this)",
+        "body": ["init: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>) {", "  $0", "},"]
+    },
+    "A-Frame component method (update)": {
+        "scope": "typescript",
+        "prefix": ["af:m:update", "af:method:update"],
+        "description": "Insert A-Frame component update method (typed this + oldData)",
+        "body": [
+            "update: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>, oldData: ${2:Readonly<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>}) {",
+            "  // oldData is the previous data object",
+            "  $0",
+            "},"
+        ]
+    },
+    "A-Frame component method (remove)": {
+        "scope": "typescript",
+        "prefix": ["af:m:remove", "af:method:remove"],
+        "description": "Insert A-Frame component remove method (typed this)",
+        "body": ["remove: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>) {", "  $0", "},"]
+    },
+    "A-Frame component method (tick)": {
+        "scope": "typescript",
+        "prefix": ["af:m:tick", "af:method:tick"],
+        "description": "Insert A-Frame component tick method (typed this)",
+        "body": [
+            "tick: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>, time: number, timeDelta: number) {",
+            "  // Called each frame before render",
+            "  $0",
+            "},"
+        ]
+    },
+    "A-Frame component method (tock)": {
+        "scope": "typescript",
+        "prefix": ["af:m:tock", "af:method:tock"],
+        "description": "Insert A-Frame component tock method (typed this)",
+        "body": [
+            "tock: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>, time: number, timeDelta: number, camera: THREE.Camera) {",
+            "  // Called each frame after render",
+            "  $0",
+            "},"
+        ]
+    },
+    "A-Frame component method (play)": {
+        "scope": "typescript",
+        "prefix": ["af:m:play", "af:method:play"],
+        "description": "Insert A-Frame component play method (typed this)",
+        "body": ["play: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>) {", "  $0", "},"]
+    },
+    "A-Frame component method (pause)": {
+        "scope": "typescript",
+        "prefix": ["af:m:pause", "af:method:pause"],
+        "description": "Insert A-Frame component pause method (typed this)",
+        "body": ["pause: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>) {", "  $0", "},"]
+    },
+    "A-Frame component method (updateSchema)": {
+        "scope": "typescript",
+        "prefix": ["af:m:updateSchema", "af:method:updateSchema"],
+        "description": "Insert A-Frame component updateSchema method (typed this)",
+        "body": [
+            "updateSchema: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>, newData: any) {",
+            "  // Dynamically modify this.schema if needed",
+            "  $0",
+            "},"
+        ]
+    }
+}
