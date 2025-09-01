@@ -5,7 +5,7 @@ import {addModelFromEncoded} from '../lib/encoder.js';
 AFRAME.registerComponent('paw', {
     init: function () {
         // Create a voxel engine instance
-        const engine = new VoxelEngine();
+        const engine = new VoxelEngine({metersX: 1, metersY: 1, metersZ: 2});
 
         const paw = [
             '11000000,11100000,00000000|0000000011111111111111111111111111111111111111110000000022222222|6',

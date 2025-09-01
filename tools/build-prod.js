@@ -15,7 +15,7 @@ const define = {
 esbuild.build({
     entryPoints: ['./src/index.ts'],
     bundle: true,
-    minify: false,
+    minify: true,
     drop: ['console'],
     external: ['aframe', 'three'], // Mark A-Frame and Three.js as external
     target: 'ES2022',
@@ -43,8 +43,16 @@ esbuild.build({
 
         // Minify with Terser and return the promise so we can chain the zip step
         return minify(code, {
+            compress: {
+                passes: 3,
+                unsafe: true,
+                toplevel: true,
+                drop_console: true,
+                pure_funcs: ["assert", "console.info", "console.debug"],
+            },
             toplevel: true,
             mangle: {
+                toplevel: true,
                 properties: {
                     regex: /^_/
                 }

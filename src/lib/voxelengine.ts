@@ -75,11 +75,27 @@ let TILE_EMPTY = 0;
 export class VoxelEngine {
     data: Uint8Array<ArrayBuffer>;
     bufferSet: BufferSet | null;
+    // Instance configuration
+    metersX: number;
+    metersY: number;
+    metersZ: number;
+    voxelsPerMeter: number;
+    voxelScale: number;
+    voxelsX: number;
+    voxelsY: number;
+    voxelsZ: number;
+    origin: {x: number; y: number; z: number};
 
     /**
      * Creates a new voxel engine.
      */
-    constructor() {
+    constructor(opts?: {
+        metersX?: number;
+        metersY?: number;
+        metersZ?: number;
+        voxelsPerMeter?: number;
+        origin?: {x: number; y: number; z: number};
+    }) {
         /**
          * Array of tile data.
          * 3D array flattened into a 1D array.
@@ -87,7 +103,20 @@ export class VoxelEngine {
          * @private
          * @const
          */
-        this.data = new Uint8Array(VOXELS_PER_WORLD_X * VOXELS_PER_WORLD_Y * VOXELS_PER_WORLD_Z);
+        // Configure instance sizes (defaults match previous globals)
+        this.metersX = opts?.metersX ?? METERS_PER_WORLD_X;
+        this.metersY = opts?.metersY ?? METERS_PER_WORLD_Y;
+        this.metersZ = opts?.metersZ ?? METERS_PER_WORLD_Z;
+        this.voxelsPerMeter = opts?.voxelsPerMeter ?? VOXELS_PER_METER;
+        this.voxelScale = 1 / this.voxelsPerMeter;
+
+        this.voxelsX = Math.max(0, (this.metersX / this.voxelScale) | 0);
+        this.voxelsY = Math.max(0, (this.metersY / this.voxelScale) | 0);
+        this.voxelsZ = Math.max(0, (this.metersZ / this.voxelScale) | 0);
+
+        this.origin = opts?.origin ?? {x: 0, y: 0, z: 0};
+
+        this.data = new Uint8Array(this.voxelsX * this.voxelsY * this.voxelsZ);
 
         /**
          * WebGL buffers.
@@ -104,8 +133,12 @@ export class VoxelEngine {
      * @param {number} z
      * @return {boolean}
      */
-    isOutOfRange(x, y, z) {
-        return x < 0 || x >= METERS_PER_WORLD_X || y < 0 || y >= METERS_PER_WORLD_Y || z < 0 || z >= METERS_PER_WORLD_Z;
+    isOutOfRange(x: number, y: number, z: number) {
+        // Treat x,y,z as world-space meters; convert to local by subtracting origin
+        const lx = x - this.origin.x;
+        const ly = y - this.origin.y;
+        const lz = z - this.origin.z;
+        return lx < 0 || lx >= this.metersX || ly < 0 || ly >= this.metersY || lz < 0 || lz >= this.metersZ;
     }
 
     /**
@@ -115,11 +148,15 @@ export class VoxelEngine {
      * @param {number} z
      * @return {number}
      */
-    getIndex(x, y, z) {
-        let x2 = (x / VOXEL_SCALE) | 0;
-        let y2 = (y / VOXEL_SCALE) | 0;
-        let z2 = (z / VOXEL_SCALE) | 0;
-        return z2 * VOXELS_PER_WORLD_X * VOXELS_PER_WORLD_Y + y2 * VOXELS_PER_WORLD_X + x2;
+    getIndex(x: number, y: number, z: number) {
+        // x,y,z expected in world-space meters. Convert to local voxel indices.
+        const lx = x - this.origin.x;
+        const ly = y - this.origin.y;
+        const lz = z - this.origin.z;
+        let x2 = (lx / this.voxelScale) | 0;
+        let y2 = (ly / this.voxelScale) | 0;
+        let z2 = (lz / this.voxelScale) | 0;
+        return z2 * this.voxelsX * this.voxelsY + y2 * this.voxelsX + x2;
     }
 
     /**
@@ -129,7 +166,7 @@ export class VoxelEngine {
      * @param {number} z
      * @return {number}
      */
-    getCube(x, y, z) {
+    getCube(x: number, y: number, z: number) {
         if (this.isOutOfRange(x, y, z)) {
             return TILE_EMPTY;
         }
@@ -157,7 +194,7 @@ export class VoxelEngine {
      * @param {number} z
      * @return {boolean}
      */
-    isEmpty(x, y, z) {
+    isEmpty(x: number, y: number, z: number) {
         return this.getCube(x, y, z) === TILE_EMPTY;
     }
 
@@ -170,18 +207,19 @@ export class VoxelEngine {
         // Start with 6 quads for the skybox
         let count = 6;
 
-        for (let z = 0; z < VOXELS_PER_WORLD_Z; z++) {
-            for (let y = 0; y < VOXELS_PER_WORLD_Y; y++) {
-                for (let x = 0; x < VOXELS_PER_WORLD_X; x++) {
+        for (let z = 0; z < this.voxelsZ; z++) {
+            for (let y = 0; y < this.voxelsY; y++) {
+                for (let x = 0; x < this.voxelsX; x++) {
                     let t = this.data[i++];
                     if (t === TILE_EMPTY) {
                         continue;
                     }
-                    let x1 = x * VOXEL_SCALE;
-                    let y1 = y * VOXEL_SCALE;
-                    let z1 = z * VOXEL_SCALE;
+                    // Convert local voxel indices to world-space meters
+                    let x1 = x * this.voxelScale + this.origin.x;
+                    let y1 = y * this.voxelScale + this.origin.y;
+                    let z1 = z * this.voxelScale + this.origin.z;
 
-                    if (this.isEmpty(x1, y1 + VOXEL_SCALE, z1)) {
+                    if (this.isEmpty(x1, y1 + this.voxelScale, z1)) {
                         count++; // top
                     }
 
@@ -197,11 +235,10 @@ export class VoxelEngine {
                         count++; // south
                     }
 
-                    if (this.isEmpty(x1 - VOXEL_SCALE, y1, z1)) {
+                    if (this.isEmpty(x1 - this.voxelScale, y1, z1)) {
                         count++; // west
                     }
-
-                    if (this.isEmpty(x1 + VOXEL_SCALE, y1, z1)) {
+                    if (this.isEmpty(x1 + this.voxelScale, y1, z1)) {
                         count++; // east
                     }
                 }
@@ -211,9 +248,9 @@ export class VoxelEngine {
         this.bufferSet = new BufferSet();
 
         i = 0;
-        for (let z = 0; z < VOXELS_PER_WORLD_Z; z++) {
-            for (let y = 0; y < VOXELS_PER_WORLD_Y; y++) {
-                for (let x = 0; x < VOXELS_PER_WORLD_X; x++) {
+        for (let z = 0; z < this.voxelsZ; z++) {
+            for (let y = 0; y < this.voxelsY; y++) {
+                for (let x = 0; x < this.voxelsX; x++) {
                     let t = this.data[i++];
                     if (t === TILE_EMPTY) {
                         continue;
@@ -221,13 +258,14 @@ export class VoxelEngine {
 
                     let color = getTileColor(t);
 
-                    let x1 = x * VOXEL_SCALE;
-                    let y1 = y * VOXEL_SCALE;
-                    let z1 = z * VOXEL_SCALE;
+                    // Local voxel -> world-space meters
+                    let x1 = x * this.voxelScale + this.origin.x;
+                    let y1 = y * this.voxelScale + this.origin.y;
+                    let z1 = z * this.voxelScale + this.origin.z;
 
-                    let x2 = x1 + VOXEL_SCALE;
-                    let y2 = y1 + VOXEL_SCALE;
-                    let z2 = z1 + VOXEL_SCALE;
+                    let x2 = x1 + this.voxelScale;
+                    let y2 = y1 + this.voxelScale;
+                    let z2 = z1 + this.voxelScale;
 
                     let p1 = new THREE.Vector3(x1, y2, z2);
                     let p2 = new THREE.Vector3(x2, y2, z2);
@@ -238,27 +276,27 @@ export class VoxelEngine {
                     let p7 = new THREE.Vector3(x2, y1, z1);
                     let p8 = new THREE.Vector3(x1, y1, z1);
 
-                    if (this.isEmpty(x1, y1 + VOXEL_SCALE, z1)) {
+                    if (this.isEmpty(x1, y1 + this.voxelScale, z1)) {
                         this.bufferSet.addQuad([p1, p2, p3, p4], color); // top
                     }
 
-                    if (this.isEmpty(x1, y1 - VOXEL_SCALE, z1)) {
+                    if (this.isEmpty(x1, y1 - this.voxelScale, z1)) {
                         this.bufferSet.addQuad([p8, p7, p6, p5], color); // bottom
                     }
 
-                    if (this.isEmpty(x1, y1, z1 + VOXEL_SCALE)) {
+                    if (this.isEmpty(x1, y1, z1 + this.voxelScale)) {
                         this.bufferSet.addQuad([p2, p1, p5, p6], color); // north
                     }
 
-                    if (this.isEmpty(x1, y1, z1 - VOXEL_SCALE)) {
+                    if (this.isEmpty(x1, y1, z1 - this.voxelScale)) {
                         this.bufferSet.addQuad([p4, p3, p7, p8], color); // south
                     }
 
-                    if (this.isEmpty(x1 - VOXEL_SCALE, y1, z1)) {
+                    if (this.isEmpty(x1 - this.voxelScale, y1, z1)) {
                         this.bufferSet.addQuad([p1, p4, p8, p5], color); // west
                     }
 
-                    if (this.isEmpty(x1 + VOXEL_SCALE, y1, z1)) {
+                    if (this.isEmpty(x1 + this.voxelScale, y1, z1)) {
                         this.bufferSet.addQuad([p3, p2, p6, p7], color); // east
                     }
                 }
