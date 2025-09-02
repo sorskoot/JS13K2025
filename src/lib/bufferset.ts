@@ -6,35 +6,35 @@
 import {BufferGeometry, Mesh, MeshStandardMaterial, Scene, Vector3} from 'three';
 
 export class BufferSet {
-    geometry: BufferGeometry;
-    material: MeshStandardMaterial;
+    private _geometry: BufferGeometry;
+    private _material: MeshStandardMaterial;
     mesh: Mesh;
-    positions: number[];
-    colors: number[];
-    normals: number[];
-    vertexCount: number;
+    private _positions: number[];
+    private _colors: number[];
+    private _normals: number[];
+    private _vertexCount: number;
 
     constructor() {
-        this.geometry = new THREE.BufferGeometry();
-        this.material = new THREE.MeshStandardMaterial({vertexColors: true});
-        this.mesh = new THREE.Mesh(this.geometry, this.material);
+        this._geometry = new THREE.BufferGeometry();
+        this._material = new THREE.MeshStandardMaterial({vertexColors: true});
+        this.mesh = new THREE.Mesh(this._geometry, this._material);
         this.mesh.castShadow = true;
         this.mesh.receiveShadow = true;
-        this.positions = [];
-        this.colors = [];
-        this.normals = [];
-        this.vertexCount = 0;
+        this._positions = [];
+        this._colors = [];
+        this._normals = [];
+        this._vertexCount = 0;
     }
 
     resetBuffers() {
-        this.positions = [];
-        this.colors = [];
-        this.normals = [];
-        this.vertexCount = 0;
-        this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([]), 3));
-        this.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array([]), 3));
-        this.geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array([]), 3));
-        this.geometry.setIndex([]);
+        this._positions = [];
+        this._colors = [];
+        this._normals = [];
+        this._vertexCount = 0;
+        this._geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([]), 3));
+        this._geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array([]), 3));
+        this._geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array([]), 3));
+        this._geometry.setIndex([]);
     }
 
     /**
@@ -54,16 +54,16 @@ export class BufferSet {
         const indices = [0, 1, 2, 0, 2, 3];
         for (let k = 0; k < 6; k++) {
             const i = indices[k];
-            this.positions.push(points[i].x, points[i].y, points[i].z);
-            this.normals.push(normal.x, normal.y, normal.z);
+            this._positions.push(points[i].x, points[i].y, points[i].z);
+            this._normals.push(normal.x, normal.y, normal.z);
 
             // Convert color (number) to RGB
             const r = ((color >> 16) & 0xff) / 255;
             const g = ((color >> 8) & 0xff) / 255;
             const b = (color & 0xff) / 255;
-            this.colors.push(r, g, b);
+            this._colors.push(r, g, b);
 
-            this.vertexCount++;
+            this._vertexCount++;
         }
     }
 
@@ -71,22 +71,22 @@ export class BufferSet {
      * Updates the webgl buffers with the current buffer state.
      */
     updateBuffers() {
-        this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.positions), 3));
-        this.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(this.colors), 3));
-        this.geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(this.normals), 3));
+        this._geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this._positions), 3));
+        this._geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(this._colors), 3));
+        this._geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(this._normals), 3));
         // Optionally, set index if needed for indexed drawing
-        // this.geometry.setIndex([...]);
-        this.geometry.computeVertexNormals();
-        this.geometry.attributes.position.needsUpdate = true;
-        this.geometry.attributes.color.needsUpdate = true;
-        this.geometry.attributes.normal.needsUpdate = true;
+        // this._geometry.setIndex([...]);
+        this._geometry.computeVertexNormals();
+        this._geometry.attributes.position.needsUpdate = true;
+        this._geometry.attributes.color.needsUpdate = true;
+        this._geometry.attributes.normal.needsUpdate = true;
     }
 
     /**
      * Draw the scene.
      */
     render(scene: Scene) {
-        if (this.vertexCount === 0) {
+        if (this._vertexCount === 0) {
             return;
         }
         if (!scene.children.includes(this.mesh)) {

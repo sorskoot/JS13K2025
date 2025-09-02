@@ -11,11 +11,11 @@
             "    // example: myProp: { type: 'number', default: 0 },",
             "} as const;",
             "",
-            "type ${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data = DataOf<typeof schema>;",
+            "type ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data = DataOf<typeof schema>;",
             "",
             "AFRAME.registerComponent('${TM_FILENAME_BASE}', {",
             "    schema,",
-            "    init: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>) {",
+            "    init: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data>) {",
             "        $0",
             "    },",
             "});"
@@ -79,14 +79,14 @@
         "scope": "typescript",
         "prefix": ["af:m:init", "af:method:init"],
         "description": "Insert A-Frame component init method (typed this)",
-        "body": ["init: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>) {", "  $0", "},"]
+        "body": ["init: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data>) {", "  $0", "},"]
     },
     "A-Frame component method (update)": {
         "scope": "typescript",
         "prefix": ["af:m:update", "af:method:update"],
         "description": "Insert A-Frame component update method (typed this + oldData)",
         "body": [
-            "update: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>, oldData: ${2:Readonly<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>}) {",
+            "update: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data>, oldData: ${2:Readonly<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data>}) {",
             "  // oldData is the previous data object",
             "  $0",
             "},"
@@ -96,14 +96,14 @@
         "scope": "typescript",
         "prefix": ["af:m:remove", "af:method:remove"],
         "description": "Insert A-Frame component remove method (typed this)",
-        "body": ["remove: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>) {", "  $0", "},"]
+        "body": ["remove: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data>) {", "  $0", "},"]
     },
     "A-Frame component method (tick)": {
         "scope": "typescript",
         "prefix": ["af:m:tick", "af:method:tick"],
         "description": "Insert A-Frame component tick method (typed this)",
         "body": [
-            "tick: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>, time: number, timeDelta: number) {",
+            "tick: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data>, time: number, timeDelta: number) {",
             "  // Called each frame before render",
             "  $0",
             "},"
@@ -114,7 +114,7 @@
         "prefix": ["af:m:tock", "af:method:tock"],
         "description": "Insert A-Frame component tock method (typed this)",
         "body": [
-            "tock: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>, time: number, timeDelta: number, camera: THREE.Camera) {",
+            "tock: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data>, time: number, timeDelta: number, camera: THREE.Camera) {",
             "  // Called each frame after render",
             "  $0",
             "},"
@@ -124,20 +124,20 @@
         "scope": "typescript",
         "prefix": ["af:m:play", "af:method:play"],
         "description": "Insert A-Frame component play method (typed this)",
-        "body": ["play: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>) {", "  $0", "},"]
+        "body": ["play: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data>) {", "  $0", "},"]
     },
     "A-Frame component method (pause)": {
         "scope": "typescript",
         "prefix": ["af:m:pause", "af:method:pause"],
         "description": "Insert A-Frame component pause method (typed this)",
-        "body": ["pause: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>) {", "  $0", "},"]
+        "body": ["pause: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data>) {", "  $0", "},"]
     },
     "A-Frame component method (updateSchema)": {
         "scope": "typescript",
         "prefix": ["af:m:updateSchema", "af:method:updateSchema"],
         "description": "Insert A-Frame component updateSchema method (typed this)",
         "body": [
-            "updateSchema: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/capitalize}/}Data>, newData: any) {",
+            "updateSchema: function (this: Component<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data>, newData: any) {",
             "  // Dynamically modify this.schema if needed",
             "  $0",
             "},"

@@ -3,7 +3,7 @@
  See NOTICE for details.
 */
 
-import {Mesh, Scene} from 'three';
+import {Mesh, Scene, Vector3} from 'three';
 import {BufferSet} from './bufferset.js';
 import {getTileColor, intbound, signum} from './utils.js';
 
@@ -70,21 +70,24 @@ const VOXELS_PER_WORLD_Z = METERS_PER_WORLD_Z / VOXEL_SCALE;
  * Empty tile.
  * @const {number}
  */
-let TILE_EMPTY = 0;
+const TILE_EMPTY = 0;
 
 export class VoxelEngine {
-    data: Uint8Array<ArrayBuffer>;
-    bufferSet: BufferSet | null;
+    private _data: Uint8Array;
+    private _bufferSet: BufferSet | null;
     // Instance configuration
-    metersX: number;
-    metersY: number;
-    metersZ: number;
-    voxelsPerMeter: number;
-    voxelScale: number;
-    voxelsX: number;
-    voxelsY: number;
-    voxelsZ: number;
-    origin: {x: number; y: number; z: number};
+    private _metersX: number;
+    private _metersY: number;
+    private _metersZ: number;
+    private _voxelsPerMeter: number;
+    private _voxelScale: number;
+    private _voxelsX: number;
+    private _voxelsY: number;
+    private _voxelsZ: number;
+    // Cached derived sizes for faster indexing
+    private _planeSize: number;
+    private _totalVoxels: number;
+    private _origin: {x: number; y: number; z: number};
 
     /**
      * Creates a new voxel engine.
@@ -104,26 +107,29 @@ export class VoxelEngine {
          * @const
          */
         // Configure instance sizes (defaults match previous globals)
-        this.metersX = opts?.metersX ?? METERS_PER_WORLD_X;
-        this.metersY = opts?.metersY ?? METERS_PER_WORLD_Y;
-        this.metersZ = opts?.metersZ ?? METERS_PER_WORLD_Z;
-        this.voxelsPerMeter = opts?.voxelsPerMeter ?? VOXELS_PER_METER;
-        this.voxelScale = 1 / this.voxelsPerMeter;
+        this._metersX = opts?.metersX ?? METERS_PER_WORLD_X;
+        this._metersY = opts?.metersY ?? METERS_PER_WORLD_Y;
+        this._metersZ = opts?.metersZ ?? METERS_PER_WORLD_Z;
 
-        this.voxelsX = Math.max(0, (this.metersX / this.voxelScale) | 0);
-        this.voxelsY = Math.max(0, (this.metersY / this.voxelScale) | 0);
-        this.voxelsZ = Math.max(0, (this.metersZ / this.voxelScale) | 0);
+        this._voxelsPerMeter = opts?.voxelsPerMeter ?? VOXELS_PER_METER;
+        this._voxelScale = 1 / this._voxelsPerMeter;
 
-        this.origin = opts?.origin ?? {x: 0, y: 0, z: 0};
+        this._voxelsX = Math.max(0, (this._metersX / this._voxelScale) | 0);
+        this._voxelsY = Math.max(0, (this._metersY / this._voxelScale) | 0);
+        this._voxelsZ = Math.max(0, (this._metersZ / this._voxelScale) | 0);
 
-        this.data = new Uint8Array(this.voxelsX * this.voxelsY * this.voxelsZ);
+        this._origin = opts?.origin ?? {x: 0, y: 0, z: 0};
+
+        this._planeSize = this._voxelsX * this._voxelsY;
+        this._totalVoxels = this._planeSize * this._voxelsZ;
+        this._data = new Uint8Array(this._totalVoxels);
 
         /**
          * WebGL buffers.
          * @type {?BufferSet}
          * @private
          */
-        this.bufferSet = null;
+        this._bufferSet = null;
     }
 
     /**
@@ -133,12 +139,12 @@ export class VoxelEngine {
      * @param {number} z
      * @return {boolean}
      */
-    isOutOfRange(x: number, y: number, z: number) {
+    private _isOutOfRange(x: number, y: number, z: number) {
         // Treat x,y,z as world-space meters; convert to local by subtracting origin
-        const lx = x - this.origin.x;
-        const ly = y - this.origin.y;
-        const lz = z - this.origin.z;
-        return lx < 0 || lx >= this.metersX || ly < 0 || ly >= this.metersY || lz < 0 || lz >= this.metersZ;
+        const lx = x - this._origin.x;
+        const ly = y - this._origin.y;
+        const lz = z - this._origin.z;
+        return lx < 0 || lx >= this._metersX || ly < 0 || ly >= this._metersY || lz < 0 || lz >= this._metersZ;
     }
 
     /**
@@ -148,15 +154,31 @@ export class VoxelEngine {
      * @param {number} z
      * @return {number}
      */
-    getIndex(x: number, y: number, z: number) {
+    private _getIndex(x: number, y: number, z: number) {
         // x,y,z expected in world-space meters. Convert to local voxel indices.
-        const lx = x - this.origin.x;
-        const ly = y - this.origin.y;
-        const lz = z - this.origin.z;
-        let x2 = (lx / this.voxelScale) | 0;
-        let y2 = (ly / this.voxelScale) | 0;
-        let z2 = (lz / this.voxelScale) | 0;
-        return z2 * this.voxelsX * this.voxelsY + y2 * this.voxelsX + x2;
+        const lx = x - this._origin.x;
+        const ly = y - this._origin.y;
+        const lz = z - this._origin.z;
+        let x2 = (lx / this._voxelScale) | 0;
+        let y2 = (ly / this._voxelScale) | 0;
+        let z2 = (lz / this._voxelScale) | 0;
+        return z2 * this._voxelsX * this._voxelsY + y2 * this._voxelsX + x2;
+    }
+
+    /**
+     * Fast voxel-space helpers (integer voxel coords).
+     */
+    private _inBoundsVoxel(xi: number, yi: number, zi: number) {
+        return xi >= 0 && xi < this._voxelsX && yi >= 0 && yi < this._voxelsY && zi >= 0 && zi < this._voxelsZ;
+    }
+
+    private _voxelIndex(xi: number, yi: number, zi: number) {
+        return zi * this._planeSize + yi * this._voxelsX + xi;
+    }
+
+    private _isVoxelEmpty(xi: number, yi: number, zi: number) {
+        if (!this._inBoundsVoxel(xi, yi, zi)) return true;
+        return this._data[this._voxelIndex(xi, yi, zi)] === TILE_EMPTY;
     }
 
     /**
@@ -166,11 +188,11 @@ export class VoxelEngine {
      * @param {number} z
      * @return {number}
      */
-    getCube(x: number, y: number, z: number) {
-        if (this.isOutOfRange(x, y, z)) {
+    getCube(x: number, y: number, z: number): number {
+        if (this._isOutOfRange(x, y, z)) {
             return TILE_EMPTY;
         }
-        return this.data[this.getIndex(x, y, z)];
+        return this._data[this._getIndex(x, y, z)];
     }
 
     /**
@@ -181,10 +203,10 @@ export class VoxelEngine {
      * @param {number} v The tile type.
      */
     setCube(x: number, y: number, z: number, v: number) {
-        if (this.isOutOfRange(x, y, z)) {
+        if (this._isOutOfRange(x, y, z)) {
             return;
         }
-        this.data[this.getIndex(x, y, z)] = v;
+        this._data[this._getIndex(x, y, z)] = v;
     }
 
     /**
@@ -194,64 +216,21 @@ export class VoxelEngine {
      * @param {number} z
      * @return {boolean}
      */
-    isEmpty(x: number, y: number, z: number) {
+    private _isEmpty(x: number, y: number, z: number): boolean {
         return this.getCube(x, y, z) === TILE_EMPTY;
     }
 
     /**
      * Builds the WebGL BufferSet based on the tile data.
      */
-    buildBuffers() {
+    private _buildBuffers() {
+        // Build buffers directly using voxel-space neighbor checks.
+        this._bufferSet = new BufferSet();
         let i = 0;
-
-        // Start with 6 quads for the skybox
-        let count = 6;
-
-        for (let z = 0; z < this.voxelsZ; z++) {
-            for (let y = 0; y < this.voxelsY; y++) {
-                for (let x = 0; x < this.voxelsX; x++) {
-                    let t = this.data[i++];
-                    if (t === TILE_EMPTY) {
-                        continue;
-                    }
-                    // Convert local voxel indices to world-space meters
-                    let x1 = x * this.voxelScale + this.origin.x;
-                    let y1 = y * this.voxelScale + this.origin.y;
-                    let z1 = z * this.voxelScale + this.origin.z;
-
-                    if (this.isEmpty(x1, y1 + this.voxelScale, z1)) {
-                        count++; // top
-                    }
-
-                    if (this.isEmpty(x1, y1 - VOXEL_SCALE, z1)) {
-                        count++; // bottom
-                    }
-
-                    if (this.isEmpty(x1, y1, z1 + VOXEL_SCALE)) {
-                        count++; // north
-                    }
-
-                    if (this.isEmpty(x1, y1, z1 - VOXEL_SCALE)) {
-                        count++; // south
-                    }
-
-                    if (this.isEmpty(x1 - this.voxelScale, y1, z1)) {
-                        count++; // west
-                    }
-                    if (this.isEmpty(x1 + this.voxelScale, y1, z1)) {
-                        count++; // east
-                    }
-                }
-            }
-        }
-
-        this.bufferSet = new BufferSet();
-
-        i = 0;
-        for (let z = 0; z < this.voxelsZ; z++) {
-            for (let y = 0; y < this.voxelsY; y++) {
-                for (let x = 0; x < this.voxelsX; x++) {
-                    let t = this.data[i++];
+        for (let z = 0; z < this._voxelsZ; z++) {
+            for (let y = 0; y < this._voxelsY; y++) {
+                for (let x = 0; x < this._voxelsX; x++) {
+                    let t = this._data[i++];
                     if (t === TILE_EMPTY) {
                         continue;
                     }
@@ -259,13 +238,13 @@ export class VoxelEngine {
                     let color = getTileColor(t);
 
                     // Local voxel -> world-space meters
-                    let x1 = x * this.voxelScale + this.origin.x;
-                    let y1 = y * this.voxelScale + this.origin.y;
-                    let z1 = z * this.voxelScale + this.origin.z;
+                    let x1 = x * this._voxelScale + this._origin.x;
+                    let y1 = y * this._voxelScale + this._origin.y;
+                    let z1 = z * this._voxelScale + this._origin.z;
 
-                    let x2 = x1 + this.voxelScale;
-                    let y2 = y1 + this.voxelScale;
-                    let z2 = z1 + this.voxelScale;
+                    let x2 = x1 + this._voxelScale;
+                    let y2 = y1 + this._voxelScale;
+                    let z2 = z1 + this._voxelScale;
 
                     let p1 = new THREE.Vector3(x1, y2, z2);
                     let p2 = new THREE.Vector3(x2, y2, z2);
@@ -276,34 +255,34 @@ export class VoxelEngine {
                     let p7 = new THREE.Vector3(x2, y1, z1);
                     let p8 = new THREE.Vector3(x1, y1, z1);
 
-                    if (this.isEmpty(x1, y1 + this.voxelScale, z1)) {
-                        this.bufferSet.addQuad([p1, p2, p3, p4], color); // top
+                    if (this._isVoxelEmpty(x, y + 1, z)) {
+                        this._bufferSet!.addQuad([p1, p2, p3, p4], color); // top
                     }
 
-                    if (this.isEmpty(x1, y1 - this.voxelScale, z1)) {
-                        this.bufferSet.addQuad([p8, p7, p6, p5], color); // bottom
+                    if (this._isVoxelEmpty(x, y - 1, z)) {
+                        this._bufferSet!.addQuad([p8, p7, p6, p5], color); // bottom
                     }
 
-                    if (this.isEmpty(x1, y1, z1 + this.voxelScale)) {
-                        this.bufferSet.addQuad([p2, p1, p5, p6], color); // north
+                    if (this._isVoxelEmpty(x, y, z + 1)) {
+                        this._bufferSet!.addQuad([p2, p1, p5, p6], color); // north
                     }
 
-                    if (this.isEmpty(x1, y1, z1 - this.voxelScale)) {
-                        this.bufferSet.addQuad([p4, p3, p7, p8], color); // south
+                    if (this._isVoxelEmpty(x, y, z - 1)) {
+                        this._bufferSet!.addQuad([p4, p3, p7, p8], color); // south
                     }
 
-                    if (this.isEmpty(x1 - this.voxelScale, y1, z1)) {
-                        this.bufferSet.addQuad([p1, p4, p8, p5], color); // west
+                    if (this._isVoxelEmpty(x - 1, y, z)) {
+                        this._bufferSet!.addQuad([p1, p4, p8, p5], color); // west
                     }
 
-                    if (this.isEmpty(x1 + this.voxelScale, y1, z1)) {
-                        this.bufferSet.addQuad([p3, p2, p6, p7], color); // east
+                    if (this._isVoxelEmpty(x + 1, y, z)) {
+                        this._bufferSet!.addQuad([p3, p2, p6, p7], color); // east
                     }
                 }
             }
         }
 
-        this.bufferSet.updateBuffers();
+        this._bufferSet!.updateBuffers();
     }
 
     /**
@@ -311,19 +290,19 @@ export class VoxelEngine {
      * If buffers are not built yet, builds them first.
      */
     getMesh(): Mesh {
-        if (!this.bufferSet) {
-            this.buildBuffers();
+        if (!this._bufferSet) {
+            this._buildBuffers();
         }
         // @ts-ignore
-        return this.bufferSet!.mesh;
+        return this._bufferSet!.mesh;
     }
 
     /**
      * Renders the chunk.
      */
     render(scene: Scene) {
-        if (this.bufferSet) {
-            this.bufferSet.render(scene);
+        if (this._bufferSet) {
+            this._bufferSet.render(scene);
         }
     }
 
@@ -347,146 +326,95 @@ export class VoxelEngine {
      * @param {number} radius
      * @return {?number} Undefined if no collision; the distance if collision.
      */
-    raycast(origin, direction, radius) {
+    raycast(origin: Vector3, direction: Vector3, radius: number): number | null {
         // Convert to voxel-space so the algorithm assumes unit-sized cubes.
-        let sOrigin = [origin[0] / VOXEL_SCALE, origin[1] / VOXEL_SCALE, origin[2] / VOXEL_SCALE];
-        let sDirection = [direction[0] / VOXEL_SCALE, direction[1] / VOXEL_SCALE, direction[2] / VOXEL_SCALE];
+        let sOrigin = [origin[0] / this._voxelScale, origin[1] / this._voxelScale, origin[2] / this._voxelScale];
+        let sDirection = [
+            direction[0] / this._voxelScale,
+            direction[1] / this._voxelScale,
+            direction[2] / this._voxelScale,
+        ];
 
         // Cube containing origin point (in voxel coords).
-        var x = Math.floor(sOrigin[0]);
-        var y = Math.floor(sOrigin[1]);
-        var z = Math.floor(sOrigin[2]);
+        let x = Math.floor(sOrigin[0]);
+        let y = Math.floor(sOrigin[1]);
+        let z = Math.floor(sOrigin[2]);
 
         // Break out direction vector (in voxel coords).
-        var dx = sDirection[0];
-        var dy = sDirection[1];
-        var dz = sDirection[2];
+        let dx = sDirection[0];
+        let dy = sDirection[1];
+        let dz = sDirection[2];
 
         // Direction to increment x,y,z when stepping.
-        var stepX = signum(dx);
-        var stepY = signum(dy);
-        var stepZ = signum(dz);
+        const stepX = signum(dx);
+        const stepY = signum(dy);
+        const stepZ = signum(dz);
 
         // See description above. The initial values depend on the fractional
-        // part of the origin.
-        var tMaxX = intbound(sOrigin[0], dx);
-        var tMaxY = intbound(sOrigin[1], dy);
-        var tMaxZ = intbound(sOrigin[2], dz);
+        // part of the origin. Guard zero components.
+        let tMaxX = dx === 0 ? Infinity : intbound(sOrigin[0], dx);
+        let tMaxY = dy === 0 ? Infinity : intbound(sOrigin[1], dy);
+        let tMaxZ = dz === 0 ? Infinity : intbound(sOrigin[2], dz);
 
         // The change in t when taking a step (always positive).
-        var tDeltaX = stepX / dx;
-        var tDeltaY = stepY / dy;
-        var tDeltaZ = stepZ / dz;
+        let tDeltaX = dx === 0 ? Infinity : Math.abs(1 / dx);
+        let tDeltaY = dy === 0 ? Infinity : Math.abs(1 / dy);
+        let tDeltaZ = dz === 0 ? Infinity : Math.abs(1 / dz);
 
-        // Buffer for reporting faces to the callback.
-        var face = [0, 0, 0];
-
-        // Avoids an infinite loop.
+        // Avoids an infinite loop when direction is zero
         if (dx === 0 && dy === 0 && dz === 0) {
             throw new RangeError();
         }
 
         // Convert radius into voxel-space units before normalizing by |direction|.
-        radius = radius / VOXEL_SCALE;
+        radius = radius / this._voxelScale;
         // Rescale from units of 1 cube-edge to units of 'direction' so we can
         // compare with 't'.
-        radius /= Math.sqrt(dx * dx + dy * dy + dz * dz);
+        const dirLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        radius /= dirLen;
+
+        // Quick early-out: if origin is inside a solid voxel
+        if (!this._isVoxelEmpty(x, y, z)) {
+            return 0;
+        }
 
         let t = Math.min(tMaxX, tMaxY, tMaxZ);
 
-        while (true) {
-            if (face[0] > 0) {
-                // Stepping west
-                if (!this.isEmpty(x, y, z) || !this.isEmpty(x - 1, y, z)) {
-                    return t * VOXEL_SCALE;
-                }
-            } else if (face[0] < 0) {
-                // Stepping east
-                if (!this.isEmpty(x, y, z) || !this.isEmpty(x + 1, y, z)) {
-                    return t * VOXEL_SCALE;
-                }
-            }
-
-            if (face[1] > 0) {
-                // Stepping down
-                if (!this.isEmpty(x, y, z) || !this.isEmpty(x, y - 1, z)) {
-                    return t * VOXEL_SCALE;
-                }
-            } else if (face[1] < 0) {
-                // Stepping up
-                if (!this.isEmpty(x, y, z) || !this.isEmpty(x, y + 1, z)) {
-                    return t * VOXEL_SCALE;
-                }
-            }
-
-            if (face[2] > 0) {
-                // Stepping south
-                if (!this.isEmpty(x, y, z) || !this.isEmpty(x, y, z - 1)) {
-                    return t * VOXEL_SCALE;
-                }
-            } else if (face[2] < 0) {
-                // Stepping north
-                if (!this.isEmpty(x, y, z) || !this.isEmpty(x, y, z + 1)) {
-                    return t * VOXEL_SCALE;
-                }
-            }
-
-            // tMaxX stores the t-value at which we cross a cube boundary along the
-            // X axis, and similarly for Y and Z. Therefore, choosing the least tMax
-            // chooses the closest cube boundary. Only the first case of the four
-            // has been commented in detail.
+        while (t <= radius) {
+            // Step the axis with smallest tMax
             if (tMaxX < tMaxY) {
                 if (tMaxX < tMaxZ) {
-                    if (tMaxX > radius) {
-                        break;
-                    }
-                    t = tMaxX;
-                    // Update which cube we are now in.
                     x += stepX;
-                    // Adjust tMaxX to the next X-oriented boundary crossing.
+                    t = tMaxX;
                     tMaxX += tDeltaX;
-                    // Record the normal vector of the cube face we entered.
-                    face[0] = -stepX;
-                    face[1] = 0;
-                    face[2] = 0;
                 } else {
-                    if (tMaxZ > radius) {
-                        break;
-                    }
-                    t = tMaxZ;
                     z += stepZ;
+                    t = tMaxZ;
                     tMaxZ += tDeltaZ;
-                    face[0] = 0;
-                    face[1] = 0;
-                    face[2] = -stepZ;
                 }
             } else {
                 if (tMaxY < tMaxZ) {
-                    if (tMaxY > radius) {
-                        break;
-                    }
-                    t = tMaxY;
                     y += stepY;
+                    t = tMaxY;
                     tMaxY += tDeltaY;
-                    face[0] = 0;
-                    face[1] = -stepY;
-                    face[2] = 0;
                 } else {
-                    // Identical to the second case, repeated for simplicity in
-                    // the conditionals.
-                    if (tMaxZ > radius) {
-                        break;
-                    }
-                    t = tMaxZ;
                     z += stepZ;
+                    t = tMaxZ;
                     tMaxZ += tDeltaZ;
-                    face[0] = 0;
-                    face[1] = 0;
-                    face[2] = -stepZ;
                 }
             }
-        }
 
+            // If we've left the voxel grid entirely -> stop
+            if (!this._inBoundsVoxel(x, y, z)) {
+                return null;
+            }
+
+            // If the voxel is solid, return the intersection distance
+            if (!this._isVoxelEmpty(x, y, z)) {
+                return t * this._voxelScale;
+            }
+        }
+        // No intersection within radius
         return null;
     }
 }

@@ -21,6 +21,7 @@ esbuild.build({
     target: 'ES2022',
     format: 'esm',
     outfile: './dist/bundle.js',
+
     define,
     plugins: [
         copyStaticFiles({
@@ -39,6 +40,7 @@ esbuild.build({
     },
 })
     .then(result => {
+        fs.writeFileSync('meta.json', JSON.stringify(result.metafile));
         const code = fs.readFileSync('dist/bundle.js', 'utf8');
 
         // Minify with Terser and return the promise so we can chain the zip step
