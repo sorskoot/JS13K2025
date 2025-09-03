@@ -19,22 +19,19 @@ interface AxisMoveEvent {
     changed: [boolean, boolean, boolean, boolean];
 }
 
-const directionVector = new THREE.Vector3(0, 0, 0);
+const directionVector = new THREE.Vector3();
 const rotationEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+const newPosition = new THREE.Vector3();
 
-export const smoothLocomotionComponent = {
+AFRAME.registerComponent('smooth-locomotion', {
     schema,
     init: function (this: SmoothLocomotionComponent) {
-        this._velocity = new THREE.Vector3(0, 0, 0);
+        this._velocity = new THREE.Vector3();
         this._axisMoveHandler = (event: Event) => {
-            const evt = event as CustomEvent<AxisMoveEvent>;
-            const {axis, changed} = evt.detail;
-
-            // values are in range [-1, 1]
-            const forward = THREE.MathUtils.lerp(-this.data.speed, this.data.speed, (axis[3] + 1) / 2);
-            const right = THREE.MathUtils.lerp(-this.data.speed, this.data.speed, (axis[2] + 1) / 2);
-            this._velocity.z = forward;
-            this._velocity.x = right;
+            const {axis} = (event as CustomEvent<AxisMoveEvent>).detail;
+            const s = this.data.speed;
+            this._velocity.z = axis[3] * s;
+            this._velocity.x = axis[2] * s;
         };
     },
     play: function (this: SmoothLocomotionComponent) {
@@ -45,16 +42,14 @@ export const smoothLocomotionComponent = {
     },
     tick: function (this: SmoothLocomotionComponent, time: number, timeDelta: number) {
         const rotation = this.data.camera.getAttribute('rotation');
-        directionVector.copy(this._velocity);
-        directionVector.multiplyScalar(timeDelta);
-        // Transform direction relative to heading.
-        rotationEuler.set(THREE.MathUtils.degToRad(rotation.x), THREE.MathUtils.degToRad(rotation.y), 0);
+        directionVector.copy(this._velocity).multiplyScalar(timeDelta);
+        rotationEuler.set((rotation.x * Math.PI) / 180, (rotation.y * Math.PI) / 180, 0);
         directionVector.applyEuler(rotationEuler);
-        const newPosition = new THREE.Vector3();
+        const position = this.data.rig.object3D.position;
+        // TODO: Add collision detection here
 
-        newPosition.copy(this.data.rig.object3D.position);
-        newPosition.add(directionVector);
-        console.log(newPosition);
+        newPosition.copy(position).add(directionVector); // move
+        newPosition.y = position.y; // lock y
         this.data.rig.object3D.position.copy(newPosition);
     },
-};
+});
