@@ -2,6 +2,7 @@
 import * as esbuild from 'esbuild';
 import { webglPlugin } from 'esbuild-plugin-webgl';
 import copyStaticFiles from 'esbuild-copy-static-files';
+import { componentCheckerPlugin } from './plugins/esbuild-component-check.js';
 
 async function serve() {
     let ctx = await esbuild.context({
@@ -16,6 +17,7 @@ async function serve() {
         format: 'esm',
         outfile: './dist/index.js',
         plugins: [
+            componentCheckerPlugin,
             webglPlugin(),
             copyStaticFiles({
                 src: './static', // Source directory
