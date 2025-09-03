@@ -47,13 +47,13 @@ AFRAME.registerComponent('snap-rotate', {
 
             if (currentAxis < -0.8 && !this._snapped) {
                 // rotate left (positive degrees)
-                this.data.player.object3D.rotateY(THREE.MathUtils.degToRad(this.data.degrees));
+                this.data.player.object3D.rotateY((this.data.degrees * Math.PI) / 180);
                 this._snapped = true;
             }
 
             if (currentAxis > 0.8 && !this._snapped) {
                 // rotate right (negative degrees)
-                this.data.player.object3D.rotateY(THREE.MathUtils.degToRad(-this.data.degrees));
+                this.data.player.object3D.rotateY((-this.data.degrees * Math.PI) / 180);
                 this._snapped = true;
             }
 

@@ -42,8 +42,13 @@ AFRAME.registerComponent('smooth-locomotion', {
     },
     tick: function (this: SmoothLocomotionComponent, time: number, timeDelta: number) {
         const rotation = this.data.camera.getAttribute('rotation');
+        const rigRotation = this.data.rig.getAttribute('rotation');
         directionVector.copy(this._velocity).multiplyScalar(timeDelta);
-        rotationEuler.set((rotation.x * Math.PI) / 180, (rotation.y * Math.PI) / 180, 0);
+        rotationEuler.set(
+            ((rotation.x + rigRotation.x) * Math.PI) / 180,
+            ((rotation.y + rigRotation.y) * Math.PI) / 180,
+            0
+        );
         directionVector.applyEuler(rotationEuler);
         const position = this.data.rig.object3D.position;
         // TODO: Add collision detection here
