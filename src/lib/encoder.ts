@@ -4,9 +4,17 @@ import {VoxelEngine, VOXELS_PER_METER} from './voxelengine.js';
 // --- Column-dictionary decoder ---
 const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_'; // 64 chars
 
+export enum Rotation {
+    None,
+    Clockwise90,
+    Clockwise180,
+    Clockwise270,
+}
+
 export function addModelFromEncoded(
     encoded: string,
     engine: VoxelEngine,
+    rotation: Rotation = Rotation.None,
     offset: Vector3 = new THREE.Vector3(0, 0, 0)
 ) {
     const size = VOXELS_PER_METER;
@@ -27,11 +35,6 @@ export function addModelFromEncoded(
         }
     }
 
-    // Expect compact single-char-per-position index string (no fallbacks)
-    if (indexPart.length !== size * size) {
-        throw new Error(`Invalid encoded index length ${indexPart.length}, expected ${size * size}`);
-    }
-
     let pos = 0;
     for (let x = 0; x < size; x++) {
         for (let z = 0; z < size; z++) {
@@ -43,9 +46,26 @@ export function addModelFromEncoded(
                 const local = parseInt(key[y] || '0', 16);
                 if (local !== 0) {
                     const color = palette[local] !== undefined ? palette[local] : local;
-                    const px = x / VOXELS_PER_METER + offset.x;
+                    // rotate x/z in 90deg increments around the model origin (min corner)
+                    let rx = x;
+                    let rz = z;
+                    switch (rotation) {
+                        case Rotation.Clockwise90:
+                            rx = z;
+                            rz = size - 1 - x;
+                            break;
+                        case Rotation.Clockwise180:
+                            rx = size - 1 - x;
+                            rz = size - 1 - z;
+                            break;
+                        case Rotation.Clockwise270:
+                            rx = size - 1 - z;
+                            rz = x;
+                            break;
+                    }
+                    const px = rx / VOXELS_PER_METER + offset.x;
                     const py = y / VOXELS_PER_METER + offset.y;
-                    const pz = z / VOXELS_PER_METER + offset.z;
+                    const pz = rz / VOXELS_PER_METER + offset.z;
                     engine.setCube(px, py, pz, color);
                 }
             }

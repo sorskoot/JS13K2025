@@ -1,5 +1,5 @@
 import {VoxelEngine, VOXELS_PER_METER} from '../lib/voxelengine.js';
-import {addModelFromEncoded} from '../lib/encoder.js';
+import {addModelFromEncoded, Rotation} from '../lib/encoder.js';
 
 AFRAME.registerComponent('world', {
     init: function () {
@@ -17,19 +17,18 @@ AFRAME.registerComponent('world', {
         // Generate a mesh or geometry from the engine
         for (let x = 0; x <= 10; x++) {
             for (let z = 0; z <= 10; z++) {
-                addModelFromEncoded(floor, engine, new THREE.Vector3(x, 0, z));
+                addModelFromEncoded(floor, engine, Rotation.None, new THREE.Vector3(x, 0, z));
             }
         }
         for (let x = 0; x < 10; x++) {
             for (let y = 0; y < 3; y++) {
-                addModelFromEncoded(walls[0], engine, new THREE.Vector3(0.125, y, x));
-                addModelFromEncoded(walls[0], engine, new THREE.Vector3(9, y, x));
+                addModelFromEncoded(walls[0], engine, Rotation.None, new THREE.Vector3(0.125, y + 0.125, x));
+                addModelFromEncoded(walls[0], engine, Rotation.Clockwise180, new THREE.Vector3(9, y + 0.125, x));
+                addModelFromEncoded(walls[1], engine, Rotation.Clockwise270, new THREE.Vector3(x, y + 0.125, 0.125));
+                addModelFromEncoded(walls[1], engine, Rotation.Clockwise90, new THREE.Vector3(x, y + 0.125, 9)); // z=9.875
             }
         }
-        addModelFromEncoded(chair, engine, new THREE.Vector3(4, 0, 4));
-        // addModelFromEncoded(walls[1], engine, new THREE.Vector3(0, 0, 0));
-        // addModelFromEncoded(walls[1], engine, new THREE.Vector3(0, 0, 1));
-        // addModelFromEncoded(mouseModel, engine, new THREE.Vector3(5, 0, 5));
+        addModelFromEncoded(chair, engine, Rotation.None, new THREE.Vector3(4, 0, 4));
 
         const voxelMesh = engine.getMesh();
         // Convert THREE.Mesh to an A-Frame entity
