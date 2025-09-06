@@ -1,6 +1,5 @@
 import {VoxelEngine} from '../lib/voxelengine.js';
 import {addModelFromEncoded, Rotation} from '../lib/encoder.js';
-import {ZeroCurvatureEnding} from 'three';
 
 const floor = '10000000,20000000,30000000|0001000101120112011201121222122200010001011201120112011212221222|3,2,1';
 const ceiling = '00000012,00000002|0000000001111110011111100111111001111110011111100111111000000000|37,2';
@@ -31,6 +30,7 @@ type DoorSpec = {
 type HoleSpec = {
     x: number;
     z: number;
+    rotation: Rotation;
     // More to come :)
 };
 
@@ -44,6 +44,7 @@ type Room = {
     mouseHoles?: HoleSpec[];
     contents?: {model: string; pos: vec3; rot?: Rotation}[]; // chairs, bombs etc
 };
+
 // Build a single room into the engine
 function buildRoom(engine: any, room: Room) {
     const ox = room.origin[0];
@@ -158,6 +159,11 @@ function buildRoom(engine: any, room: Room) {
             );
         }
     }
+    if (room.mouseHoles) {
+        for (const d of room.mouseHoles) {
+            addModelFromEncoded(walls[1], engine, d.rotation, new THREE.Vector3(ox + d.x, 0.125, oz + d.z));
+        }
+    }
 
     // place contents (chairs, bombs, etc)
     if (room.contents) {
@@ -185,7 +191,7 @@ const rooms: Room[] = [
             {x: 9, z: 4, rotation: Rotation.Clockwise90},
             //{x: 4, z: 10, rotation: Rotation.Clockwise180}, // second room door
         ],
-        mouseHoles: [{x: 0, z: 4}], // mouse hole at x=0,z=4
+        mouseHoles: [{x: 0, z: 4, rotation: Rotation.None}], // mouse hole at x=0,z=4
         contents: [
             {model: chair, pos: [4, 0.125, 4]}, // chair
             {model: bomb, pos: [2, 0.125, 2]}, // bomb
