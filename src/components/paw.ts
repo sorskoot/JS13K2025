@@ -1,6 +1,6 @@
 import {Vector3} from 'three';
 import {VoxelEngine, VOXELS_PER_METER} from '../lib/voxelengine.js';
-import {addModelFromEncoded} from '../lib/encoder.js';
+import {addModelFromEncoded, Rotation} from '../lib/encoder.js';
 import {DataOf} from '../lib/aframe-utils.js';
 import {Component} from 'aframe';
 const schema = {
@@ -21,10 +21,10 @@ AFRAME.registerComponent('paw', {
             '00000000,00000100,11000200,00000200,00001410,11102120,00001110,00002120,00003333,00003113,11121113,00001113,00002113,00000500|012113100456676089abbc6d0456676d89abbc6d045667600121131000000000|3,4,1,12,33',
         ];
 
-        addModelFromEncoded(paw[0], engine, new THREE.Vector3(0, 0, 0));
-        addModelFromEncoded(paw[1], engine, new THREE.Vector3(0, 0, 1));
+        addModelFromEncoded(paw[0], engine, Rotation.None, new THREE.Vector3(0, 0, 0));
+        addModelFromEncoded(paw[1], engine, Rotation.None, new THREE.Vector3(0, 0, 1));
         if (this.data.gun) {
-            addModelFromEncoded(paw[2], engine, new THREE.Vector3(0, 0, 0.5));
+            addModelFromEncoded(paw[2], engine, Rotation.None, new THREE.Vector3(0, 0, 0.5));
         }
 
         // Generate a mesh or geometry from the engine

@@ -1,5 +1,6 @@
 // build.js
 import * as esbuild from 'esbuild';
+import fs from 'node:fs';
 import { webglPlugin } from 'esbuild-plugin-webgl';
 import copyStaticFiles from 'esbuild-copy-static-files';
 import { componentCheckerPlugin } from './plugins/esbuild-component-check.js';
@@ -22,7 +23,7 @@ async function serve() {
             copyStaticFiles({
                 src: './static', // Source directory
                 dest: './dist', // Destination directory
-            }),
+            })
         ],
 
         loader: {
@@ -34,6 +35,10 @@ async function serve() {
         },
         logLevel: 'info'
     });
+    // fs.watch("./static/index.html", {}, () => {
+    //     console.log("Static files changed, rebuilding...");
+    //     ctx.rebuild();
+    // });
     await ctx.watch();
     console.log('Watching for changes...');
 

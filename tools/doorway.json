@@ -1,0 +1,203 @@
+{
+  "source": "doorway.vox",
+  "modelCount": 2,
+  "encoded": [
+    "00000000,11111111,00000001|0000000100000002000000020000000200000002000000020000000200000001|37",
+    "00000000,11111111|0000000100000000000000000000000000000000000000000000000000000001|37"
+  ],
+  "models": [
+    {
+      "data": [
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1431655765
+        ]
+      ],
+      "palette": [
+        37
+      ],
+      "paletteMap": {
+        "37": 1
+      },
+      "columnDict": [
+        "00000000",
+        "11111111",
+        "00000001"
+      ],
+      "columnIndex": "0000000100000002000000020000000200000002000000020000000200000001",
+      "encoded": "00000000,11111111,00000001|0000000100000002000000020000000200000002000000020000000200000001|37"
+    },
+    {
+      "data": [
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1342177285
+        ]
+      ],
+      "palette": [
+        37
+      ],
+      "paletteMap": {
+        "37": 1
+      },
+      "columnDict": [
+        "00000000",
+        "11111111"
+      ],
+      "columnIndex": "0000000100000000000000000000000000000000000000000000000000000001",
+      "encoded": "00000000,11111111|0000000100000000000000000000000000000000000000000000000000000001|37"
+    }
+  ]
+}

@@ -20,6 +20,15 @@ You are the Black CAT — a claws-on-duty special forces operator dropped into t
 - Objective: hunt and eliminate the mice enemies that spawn in the level. Clear the map to win, or survive timed waves for a high score.
 - Primary interactions:
   - Aim & shoot: right controller trigger fires an instant-hit (hitscan) weapon — resolved with the engine's voxel ray traversal to detect mouse hits and environment collisions.
+  
+Additional mission rules (rooms, mouse-holes, and the cheese bomb):
+
+- Levels are composed of a small series of connected rooms. Each room has one or more mouse holes placed in walls that act as spawn points for mice.
+- Mice spawn from mouse holes and will run around the room using simple AI; when they reach the player and successfully bite, the player loses one life (the player starts with 9 lives).
+- After biting the player, a mouse will retreat back to the mouse hole it spawned from and hide for a short cooldown before it can spawn or act again.
+- The player can interact with mouse holes using the left controller: clicking a mouse hole permanently (for the round) blocks it off, preventing future spawns from that hole.
+- One of the rooms contains the objective: the cheese bomb. The player must find the cheese bomb and touch it (be in contact) for a sustained duration (configurable — e.g., 5 or 10 seconds). After the required hold time the bomb is defused and the player wins the mission immediately.
+- Failure conditions: the player loses the mission if they run out of lives, or if they fail to defuse the cheese bomb within the overall time limit for the mission (10 minutes by default).
 - When time allows it in jam:
   - Secondary fire / melee: close-range claw attack for finishing or conserving ammo.
   - Cover & movement: move/crouch behind voxel cover; the map is small so sightlines matter.
@@ -63,6 +72,7 @@ Use low-voxel-count mice with distinct palette indices to simplify hit detection
 - Basic controls (shooter mappings):
   - Right controller to aim and shoot.
   - Left controller watch HUD: health, ammo (tiny numbers), wave/time, score.
+  - Left controller primary interaction: point-and-click to block mouse holes (interact with wall holes). Use the same left controller input when standing near the cheese bomb to begin the defuse hold (alternatively, touching the bomb with the player collision box will start the timer).
 
 Visual feedback:
 
@@ -76,6 +86,8 @@ Visual feedback:
 - Skirmish (single-level mission): clear all mice from a compact map.
 - Wave Survival: survive increasing waves of mice for a high score.
 - Time Trial / Score Attack: clear the arena as fast as possible with score multipliers for accuracy.
+
+With the cheese-bomb objective in play, a primary mission type becomes a small-roomed search-and-defuse: clear or block mouse holes to reduce pressure, locate the cheese bomb, then touch/hold to defuse while preventing mice from interrupting the hold. This mode uses the 10-minute mission timer and the 9-life player health cap by default.
 
 ## Art & Audio
 

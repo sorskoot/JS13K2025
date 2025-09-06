@@ -3,14 +3,26 @@
 Voxel Engine:
     Decisions to make:
         ✔ Figure out how large the world should be @done(25-09-01 22:32)
-        ☐ Are the walls going to be voxels too?
-        ☐ Materials or colors?
-        ☐ Do we keep the raytracing?
-        ☐ Lighting?
-
+        ✔ Are the walls going to be voxels too? @done(25-09-05 21:03)
+        ✔ Materials or colors? @done(25-09-05 21:03)
+        ✔ Do we keep the raytracing? @done(25-09-05 21:03)
+        ✔ Lighting? @done(25-09-05 21:03)
 
 Must Have:
-    ☐ Moving Mice
+    Mice:
+        ~ The spawn at the mouse holes.
+        ☐ Moving Mice
+        ☐ Attacking Mice
+        ☐ Hiding Mice
+    Cheese-bomb:
+        ☐ Explodes 10 mintes after the game starts
+    Win state:
+        ☐ touch the cheese-bomb for 5 seconds
+    Lose state:
+        ☐ Run out of lives (9)
+        ☐ Run out of time (10 minutes)
+    ☐ Bites. When a mouse bites you, you lose a life. After biting the mouse runs away.
+
 
 Should Have:
 

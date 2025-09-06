@@ -13,7 +13,6 @@ interface ButtonEvent {
     id: number;
 }
 AFRAME.registerComponent('shoot', {
-    dependencies: ['raycaster'],
     schema,
     init: function (this: ShootComponent) {
         this._buttonDown = (event: Event) => {
