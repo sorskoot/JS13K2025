@@ -4,7 +4,14 @@ import {DataOf} from '../lib/aframe-utils.js';
 const schema = {} as const;
 
 type GameData = DataOf<typeof schema>;
-type GameSystem = System<GameData> & {};
+export type NavGrid = {
+    w: number;
+    d: number;
+    occ: Uint8Array;
+};
+export type GameSystem = System<GameData> & {
+    grid: NavGrid;
+};
 
 AFRAME.registerSystem('game', {
     schema: {},

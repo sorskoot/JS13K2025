@@ -1,5 +1,6 @@
 import {VoxelEngine} from '../lib/voxelengine.js';
 import {addModelFromEncoded, Rotation} from '../lib/encoder.js';
+import {GameSystem} from '../systems/game.js';
 
 const floor = '10000000,20000000,30000000|0001000101120112011201121222122200010001011201120112011212221222|3,2,1';
 const ceiling = '00000012,00000002|0000000001111110011111100111111001111110011111100111111000000000|37,2';
@@ -46,7 +47,7 @@ type Room = {
 };
 
 // Build a single room into the engine
-function buildRoom(engine: any, room: Room) {
+function buildRoom(engine: any, room: Room, occ: Uint8Array, gridW: number) {
     const ox = room.origin[0];
     const oy = room.origin[1];
     const oz = room.origin[2];
@@ -54,7 +55,7 @@ function buildRoom(engine: any, room: Room) {
     const w = room.size[0];
     const d = room.size[1];
     const h = room.size[2];
-
+    const idx = (x: number, z: number) => (x | 0) + (z | 0) * gridW;
     // place floor and ceiling tiles in the area
     for (let x = 0; x < w; x++) {
         for (let z = 0; z < d; z++) {
@@ -91,6 +92,7 @@ function buildRoom(engine: any, room: Room) {
                     Rotation.Clockwise90,
                     new THREE.Vector3(ox + x, oy + y + 0.125, oz + d - 1)
                 );
+                if (y === 0) occ[idx(ox + x, oz + d - 1)] = 1;
             }
         }
     }
@@ -104,6 +106,7 @@ function buildRoom(engine: any, room: Room) {
                     Rotation.Clockwise270,
                     new THREE.Vector3(ox + x, oy + y + 0.125, oz + 0)
                 );
+                if (y === 0) occ[idx(ox + x, oz + 0)] = 1;
             }
         }
     }
@@ -117,6 +120,7 @@ function buildRoom(engine: any, room: Room) {
                     Rotation.None,
                     new THREE.Vector3(ox + 0, oy + y + 0.125, oz + z)
                 );
+                if (y === 0) occ[idx(ox + 0, oz + z)] = 1;
             }
         }
     }
@@ -130,6 +134,7 @@ function buildRoom(engine: any, room: Room) {
                     Rotation.Clockwise180,
                     new THREE.Vector3(ox + w - 1, oy + y + 0.125, oz + z)
                 );
+                if (y === 0) occ[idx(ox + w - 1, oz + z)] = 1;
             }
         }
     }
@@ -161,6 +166,9 @@ function buildRoom(engine: any, room: Room) {
     }
     if (room.mouseHoles) {
         for (const d of room.mouseHoles) {
+            const cx = ox + d.x;
+            const cz = oz + d.z;
+            occ[idx(cx, cz)] = 1;
             addModelFromEncoded(walls[1], engine, d.rotation, new THREE.Vector3(ox + d.x, 0.125, oz + d.z));
         }
     }
@@ -168,6 +176,12 @@ function buildRoom(engine: any, room: Room) {
     // place contents (chairs, bombs, etc)
     if (room.contents) {
         for (const c of room.contents) {
+            if (c.pos[1] < 1) {
+                // something above 1 meter we can pass underneath
+                const cx = ox + c.pos[0];
+                const cz = oz + c.pos[2];
+                occ[idx(cx, cz)] = 1;
+            }
             addModelFromEncoded(
                 c.model,
                 engine,
@@ -193,8 +207,7 @@ const rooms: Room[] = [
         ],
         mouseHoles: [{x: 0, z: 4, rotation: Rotation.None}], // mouse hole at x=0,z=4
         contents: [
-            {model: chair, pos: [4, 0.125, 4]}, // chair
-            {model: bomb, pos: [2, 0.125, 2]}, // bomb
+            {model: chair, pos: [2, 0.125, 4]}, // chair
         ],
     },
     {
@@ -207,6 +220,9 @@ const rooms: Room[] = [
         doors: [
             // door at local x=4,z=0 relative to origin x: 10+4=14 -> corresponds to your second block placement
             {x: 0, z: 4, rotation: Rotation.Clockwise270},
+        ],
+        contents: [
+            {model: bomb, pos: [4, 0.125, 4]}, // bomb
         ],
     },
 ];
@@ -222,47 +238,17 @@ const rooms: Room[] = [
 AFRAME.registerComponent('world', {
     init: function () {
         // Create a voxel engine instance
-        const engine = new VoxelEngine({metersX: 30, metersY: 4, metersZ: 30});
-        for (const r of rooms) buildRoom(engine, r);
-        // // Generate a mesh or geometry from the engine
-        // for (let x = 0; x < 10; x++) {
-        //     for (let y = 0; y < 3; y++) {
-        //         addModelFromEncoded(walls[0], engine, Rotation.None, new THREE.Vector3(0, y + 0.125, x));
+        const metersX = 30,
+            metersY = 4,
+            metersZ = 30;
+        const engine = new VoxelEngine({metersX, metersY, metersZ});
 
-        //         addModelFromEncoded(walls[0], engine, Rotation.Clockwise180, new THREE.Vector3(9.1, y + 0.125, x));
+        // 2D occupancy grid (meter-resolution)
+        const occ = new Uint8Array(metersX * metersZ);
+        for (const r of rooms) buildRoom(engine, r, occ, metersX);
 
-        //         addModelFromEncoded(walls[0], engine, Rotation.Clockwise270, new THREE.Vector3(x, y + 0.125, 0));
-        //         if (x !== 4 || (x === 4 && y === 2)) {
-        //             addModelFromEncoded(walls[0], engine, Rotation.Clockwise90, new THREE.Vector3(x, y + 0.125, 9.1)); // z=9.875
-        //         }
-        //     }
-        // }
-        // for (let x = 0; x < 10; x++) {
-        //     for (let y = 0; y < 3; y++) {
-        //         addModelFromEncoded(walls[2], engine, Rotation.None, new THREE.Vector3(0, y + 0.125, x + 10));
-
-        //         addModelFromEncoded(walls[2], engine, Rotation.Clockwise180, new THREE.Vector3(9.1, y + 0.125, x + 10));
-        //         if (x !== 4 || (x === 4 && y === 2)) {
-        //             addModelFromEncoded(walls[2], engine, Rotation.Clockwise270, new THREE.Vector3(x, y + 0.125, 10));
-        //         }
-        //         addModelFromEncoded(walls[2], engine, Rotation.Clockwise90, new THREE.Vector3(x, y + 0.125, 9.1 + 10)); // z=9.875
-        //     }
-        // }
-        // for (let x = 0; x <= 10; x++) {
-        //     for (let z = 0; z <= 20; z++) {
-        //         addModelFromEncoded(floor, engine, Rotation.None, new THREE.Vector3(x, 0, z));
-        //         addModelFromEncoded(ceiling, engine, Rotation.None, new THREE.Vector3(x, 2.2, z));
-        //     }
-        // }
-
-        // addModelFromEncoded(chair, engine, Rotation.None, new THREE.Vector3(4, 0.125, 4));
-        // addModelFromEncoded(bomb, engine, Rotation.None, new THREE.Vector3(2, 0.125, 2));
-
-        // addModelFromEncoded(door[1], engine, Rotation.None, new THREE.Vector3(4, 0.125, 9));
-        // addModelFromEncoded(door[0], engine, Rotation.None, new THREE.Vector3(4, 1.125, 9));
-        // addModelFromEncoded(door[1], engine, Rotation.Clockwise180, new THREE.Vector3(4, 0.125, 10));
-        // addModelFromEncoded(door[0], engine, Rotation.Clockwise180, new THREE.Vector3(4, 1.125, 10));
-
+        const gameSystem = this.el.sceneEl?.systems['game'] as GameSystem;
+        gameSystem.grid = {w: metersX, d: metersZ, occ};
         const voxelMesh = engine.getMesh();
         // Convert THREE.Mesh to an A-Frame entity
         this.el.setObject3D('mesh', voxelMesh);

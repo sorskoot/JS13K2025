@@ -22,6 +22,10 @@ Must Have:
         ☐ Run out of lives (9)
         ☐ Run out of time (10 minutes)
     ☐ Bites. When a mouse bites you, you lose a life. After biting the mouse runs away.
+    Level:
+        ✔ Better way to generate levels @done(25-09-06 21:50)
+        ☐ Spawning mice at holes
+        ☐ Colliding with walls
 
 
 Should Have:
