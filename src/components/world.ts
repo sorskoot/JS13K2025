@@ -1,50 +1,9 @@
 import {VoxelEngine} from '../lib/voxelengine.js';
 import {addModelFromEncoded, Rotation} from '../lib/encoder.js';
 import {GameSystem} from '../systems/game.js';
-
-const floor = '10000000,20000000,30000000|0001000101120112011201121222122200010001011201120112011212221222|3,2,1';
-const ceiling = '00000012,00000002|0000000001111110011111100111111001111110011111100111111000000000|37,2';
-const walls = [
-    '11111111,22222222,00000000|0110011001100110222222222222222222222222222222222222222222222222|19,20',
-    '00000000,33330000,33333000,11111111,22222222,00002222,00000111|0012210034566543000000000000000000000000000000000000000000000000|19,20,5',
-    '12232333,12231223,11121223,23331223,12231112,00000000|0112311401123114555555555555555555555555555555555555555555555555|12,13,14',
-    '00000000,22220000,22222000,13343444,13341334,00001334,00000334,13341113|0012210034566547000000000000000000000000000000000000000000000000|12,5,13,14',
-];
-const chair =
-    '00022222,11111100,00020000,00020100|0000000012222221322222233222222332222223322222231222222122222222|10,38';
-const bomb =
-    '14410000,04410000,04010000,10010000,10410000,11110000,00000000,14010000,35353600,33333600,14410600,35353700,25252000,25252600,00000600|0120034567000005664000566689a056668ba5666cdedc666cc6cc6666666666|16,12,38,17,6,2,1';
-const door = [
-    '00000000,11111111,00000001|0000000100000002000000020000000200000002000000020000000200000001|37',
-    '00000000,11111111|0000000100000000000000000000000000000000000000000000000000000001|37',
-];
-
-type vec3 = [number, number, number];
-
-type DoorSpec = {
-    // local coords relative to room origin: x in [0..w-1], z in [0..d-1], y floor-level
-    x: number;
-    z: number;
-    rotation: Rotation;
-};
-
-type HoleSpec = {
-    x: number;
-    z: number;
-    rotation: Rotation;
-    // More to come :)
-};
-
-type Room = {
-    origin: vec3; // world origin for the room (lower-left corner)
-    size: vec3; // in voxels/meters in X, Y, Z
-    floorModel: string;
-    ceilingModel: string;
-    wallModel: string; // single or array indexed by side if needed
-    doors?: DoorSpec[];
-    mouseHoles?: HoleSpec[];
-    contents?: {model: string; pos: vec3; rot?: Rotation}[]; // chairs, bombs etc
-};
+import {Room} from '../types/world-types.js';
+import {door, walls} from '../models.js';
+import {rooms} from '../map.js';
 
 // Build a single room into the engine
 function buildRoom(engine: any, room: Room, occ: Uint8Array, gridW: number) {
@@ -191,41 +150,6 @@ function buildRoom(engine: any, room: Room, occ: Uint8Array, gridW: number) {
         }
     }
 }
-
-// Example rooms array that recreates your current layout
-const rooms: Room[] = [
-    {
-        origin: [0, 0, 0],
-        size: [9, 9, 3],
-        floorModel: floor,
-        ceilingModel: ceiling,
-        wallModel: walls[0],
-        doors: [
-            // a door at x=4 z=9 (matching previous door placements)
-            {x: 9, z: 4, rotation: Rotation.Clockwise90},
-            //{x: 4, z: 10, rotation: Rotation.Clockwise180}, // second room door
-        ],
-        mouseHoles: [{x: 0, z: 4, rotation: Rotation.None}], // mouse hole at x=0,z=4
-        contents: [
-            {model: chair, pos: [2, 0.125, 4]}, // chair
-        ],
-    },
-    {
-        origin: [9, 0, 0],
-        size: [9, 9, 3],
-
-        floorModel: floor,
-        ceilingModel: ceiling,
-        wallModel: walls[2],
-        doors: [
-            // door at local x=4,z=0 relative to origin x: 10+4=14 -> corresponds to your second block placement
-            {x: 0, z: 4, rotation: Rotation.Clockwise270},
-        ],
-        contents: [
-            {model: bomb, pos: [4, 0.125, 4]}, // bomb
-        ],
-    },
-];
 
 // // compute engine bounds from rooms (simple AABB)
 // let maxX = 0, maxY = 0, maxZ = 0;

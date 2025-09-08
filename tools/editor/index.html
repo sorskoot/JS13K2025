@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+            background: #0f0f0f;
+            color: #ddd;
+        }
+
+        /* Outer container holding the two panes */
+        body>div {
+            display: flex;
+            flex-direction: row;
+            /* two columns side-by-side */
+            gap: 12px;
+            height: 100vh;
+            /* fill viewport */
+            box-sizing: border-box;
+            padding: 12px;
+        }
+
+        /* Left pane: the JSON editor */
+        #data {
+            flex: 0 0 360px;
+            /* fixed-ish width */
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        #data-editor {
+            flex: 1 1 auto;
+            width: 100%;
+            min-height: 0;
+            /* allow flex children to shrink correctly */
+            padding: 8px;
+            background: #0b0b0b;
+            color: #e6e6e6;
+            border: 1px solid #333;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        /* Right pane: the canvas / rendering area */
+        #editor {
+            flex: 1 1 auto;
+            /* take remaining space */
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+            min-height: 0;
+            /* allow the canvas to stretch */
+        }
+
+        #map-rendering {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: #111;
+            border-radius: 4px;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+        }
+
+        /* Make the legend text readable on small screens */
+        @media (max-width: 700px) {
+            body>div {
+                flex-direction: column;
+            }
+
+            #data {
+                flex: 0 0 auto;
+                width: 100%;
+            }
+
+            #editor {
+                height: 50vh;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <div id="data">
+            <textarea id="data-editor" title="Data Editor" label="Data Editor"></textarea>
+        </div>
+        <div id="editor">
+            <canvas id="map-rendering"></canvas>
+        </div>
+    </div>
+    <script>
+        const Rotation = {
+            None: 0,
+            Clockwise90: 1,
+            Clockwise180: 2,
+            Clockwise270: 3,
+        };
+
+        // Map data: two example rooms
+        let data = [
+            {
+                origin: [0, 0, 0],
+                size: [9, 9, 3],
+                floorModel: 'floor',
+                ceilingModel: 'ceiling',
+                wallModel: 'wall',
+                doors: [
+                    // a door at x=9 z=4 (global coords)
+                    { x: 9, z: 4, rotation: Rotation.Clockwise90 },
+                ],
+                mouseHoles: [{ x: 0, z: 4, rotation: Rotation.None }],
+                contents: [
+                    { model: 'chair', pos: [2, 0.125, 4] },
+                ],
+            },
+            {
+                origin: [9, 0, 0],
+                size: [9, 9, 3],
+                floorModel: 'floor',
+                ceilingModel: 'ceiling',
+                wallModel: 'wall',
+                doors: [
+                    { x: 0, z: 4, rotation: Rotation.Clockwise270 },
+                ],
+                contents: [
+                    { model: 'bomb', pos: [4, 0.125, 4] },
+                ],
+            },
+        ];
+
+        // --- Editor + rendering code ---
+        const editor = document.getElementById('data-editor');
+        const canvas = document.getElementById('map-rendering');
+        const ctx = canvas.getContext('2d');
+
+        // Pretty-print initial data into the textarea
+        editor.value = JSON.stringify(data, null, 2);
+
+        // Simple debounce helper
+        function debounce(fn, wait) {
+            let t = null;
+            return function () {
+                const args = arguments;
+                clearTimeout(t);
+                t = setTimeout(function () { fn.apply(null, args); }, wait);
+            };
+        }
+
+        // Resize canvas to fit parent and maintain crisp rendering
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = Math.max(200, Math.floor(rect.width));
+            canvas.height = Math.max(200, Math.floor(rect.height));
+            render();
+        }
+
+        window.addEventListener('resize', debounce(resizeCanvas, 120));
+
+        // Convert input text to data structure; returns null on error
+        function parseEditor() {
+            try {
+                const parsed = JSON.parse(editor.value);
+                editor.style.borderColor = '';
+                return parsed;
+            } catch (e) {
+                // visually indicate invalid JSON
+                editor.style.borderColor = 'crimson';
+                return null;
+            }
+        }
+
+        // Main render function: draws top-down overview of rooms/walls/doors/mouseholes
+        function render() {
+            if (!ctx) return;
+            const parsed = parseEditor();
+            if (!parsed) {
+                // clear canvas when invalid
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#222';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.font = '14px sans-serif';
+                ctx.fillText('Invalid JSON - fix editor to see map', 10, 20);
+                return;
+            }
+
+            const rooms = parsed;
+
+            // Determine bounds (x and z axes)
+            let minX = Infinity, minZ = Infinity, maxX = -Infinity, maxZ = -Infinity;
+            for (let i = 0; i < rooms.length; i++) {
+                const r = rooms[i];
+                const ox = (r.origin && r.origin[0]) || 0;
+                const oz = (r.origin && r.origin[2]) || 0;
+                const sx = (r.size && r.size[0]) || 1;
+                const sz = (r.size && r.size[1]) || 1;
+                minX = Math.min(minX, ox);
+                minZ = Math.min(minZ, oz);
+                maxX = Math.max(maxX, ox + sx);
+                maxZ = Math.max(maxZ, oz + sz);
+            }
+            if (!isFinite(minX)) {
+                minX = 0; minZ = 0; maxX = 10; maxZ = 10;
+            }
+
+            // Add padding around map
+            const pad = 1;
+            minX -= pad; minZ -= pad; maxX += pad; maxZ += pad;
+
+            const mapW = maxX - minX;
+            const mapH = maxZ - minZ;
+
+            // Compute cell size to fit the canvas
+            const cellSize = Math.max(8, Math.floor(Math.min(canvas.width / mapW, canvas.height / mapH)));
+            const offsetX = Math.floor((canvas.width - cellSize * mapW) / 2);
+            const offsetY = Math.floor((canvas.height - cellSize * mapH) / 2);
+
+            // Helpers to transform grid coords to canvas pixels
+            function gx(x) { return offsetX + Math.round((x - minX) * cellSize); }
+            function gz(z) { return offsetY + Math.round((z - minZ) * cellSize); }
+
+            // Precompute door draw settings and a buffer to draw them after rooms (so they sit on top of walls)
+            const doorColorGood = '#33e';
+            const doorColorBad = '#800';
+            const doorLW = Math.max(2, Math.floor(cellSize * 0.08));
+            /** @type {{x1:number,y1:number,x2:number,y2:number,color:string}[]} */
+            const doorSegments = [];
+
+            // Clear background
+            ctx.fillStyle = '#1e1e1e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // grid will be drawn as an overlay after rooms so it appears on top
+
+            // Draw each room floor and walls
+            for (let i = 0; i < rooms.length; i++) {
+                const r = rooms[i];
+                const ox = (r.origin && r.origin[0]) || 0;
+                const oz = (r.origin && r.origin[2]) || 0;
+                const sx = (r.size && r.size[0]) || 1;
+                const sz = (r.size && r.size[1]) || 1;
+
+                // floor
+                ctx.fillStyle = '#2b6b2b'; // greenish floor
+                ctx.fillRect(gx(ox), gz(oz), sx * cellSize, sz * cellSize);
+
+                // walls - draw as filled rectangles on perimeter
+                ctx.fillStyle = '#444';
+                const wallThickness = Math.max(2, Math.floor(cellSize * 0.18));
+
+                // north wall (z = oz)
+                ctx.fillRect(gx(ox), gz(oz), sx * cellSize, wallThickness);
+                // south wall (z = oz + sz)
+                ctx.fillRect(gx(ox), gz(oz + sz) - wallThickness, sx * cellSize, wallThickness);
+                // west wall (x = ox)
+                ctx.fillRect(gx(ox), gz(oz), wallThickness, sz * cellSize);
+                // east wall (x = ox + sx)
+                ctx.fillRect(gx(ox + sx) - wallThickness, gz(oz), wallThickness, sz * cellSize);
+
+                // doors: collect a red line per room on the room's wall side (simple visualization)
+                if (Array.isArray(r.doors)) {
+                    for (let di = 0; di < r.doors.length; di++) {
+                        const d = r.doors[di];
+                        const dx = ox + (d.x || 0);
+                        const dz = oz + (d.z || 0);
+
+                        if (dz === oz) {
+                            // north wall: horizontal line one cell wide, slightly inside room
+                            const y = gz(oz) + doorLW;
+                            const x1 = gx(dx);
+                            const x2 = gx(dx) + cellSize;
+                            const rot = (typeof d.rotation === 'number') ? d.rotation : null;
+                            const valid = rot === 2;
+                            doorSegments.push({ x1, y1: y, x2, y2: y, color: valid ? doorColorGood : doorColorBad });
+                        } else if (dz === oz + sz) {
+                            // south wall
+                            const y = gz(oz) + sz * cellSize - doorLW;
+                            const x1 = gx(dx);
+                            const x2 = gx(dx) + cellSize;
+                            const rot = (typeof d.rotation === 'number') ? d.rotation : null;
+                            const valid = rot === 0;
+                            doorSegments.push({ x1, y1: y, x2, y2: y, color: valid ? doorColorGood : doorColorBad });
+                        } else if (dx === ox) {
+                            // west wall: vertical line one cell high, slightly inside room
+                            const x = gx(ox) + doorLW;
+                            const y1 = gz(dz);
+                            const y2 = gz(dz) + cellSize;
+                            const rot = (typeof d.rotation === 'number') ? d.rotation : null;
+                            const valid = rot === 3;
+                            doorSegments.push({ x1: x, y1, x2: x, y2, color: valid ? doorColorGood : doorColorBad });
+                        } else if (dx === ox + sx) {
+                            // east wall: vertical line one cell high, slightly inside room
+                            const x = gx(ox + sx) - doorLW;
+                            const y1 = gz(dz);
+                            const y2 = gz(dz) + cellSize;
+                            const rot = (typeof d.rotation === 'number') ? d.rotation : null;
+                            const valid = rot === 1;
+                            doorSegments.push({ x1: x, y1, x2: x, y2, color: valid ? doorColorGood : doorColorBad });
+                        } else {
+                            // not on perimeter: small cross in the cell center
+                            const cx = gx(dx) + cellSize / 2;
+                            const cy = gz(dz) + cellSize / 2;
+                            const s = Math.max(3, Math.floor(cellSize * 0.2));
+                            doorSegments.push({ x1: cx - s, y1: cy, x2: cx + s, y2: cy, color: doorColorGood });
+                            doorSegments.push({ x1: cx, y1: cy - s, x2: cx, y2: cy + s, color: doorColorGood });
+                        }
+                    }
+                }
+
+                // mouseHoles: render against interior face of the perimeter wall for clarity
+                if (Array.isArray(r.mouseHoles)) {
+                    for (let mi = 0; mi < r.mouseHoles.length; mi++) {
+                        const m = r.mouseHoles[mi];
+                        const mx = ox + (m.x || 0);
+                        const mz = oz + (m.z || 0);
+                        // default center inside the cell
+                        let px = gx(mx) + cellSize / 2;
+                        let py = gz(mz) + cellSize / 2;
+                        const radius = Math.max(3, Math.floor(cellSize * 0.18));
+
+                        // detect perimeter side and move the hole slightly INTO the room (not punched through)
+                        let onWall = false;
+                        const inset = Math.max(4, Math.floor(radius * .5)); // distance from wall into room
+                        if (mz === oz) {
+                            // north wall: place just inside the northern cell
+                            py = gz(mz) + inset;
+                            px = gx(mx) + cellSize / 2;
+                            onWall = true;
+                        } else if (mz === oz + sz) {
+                            // south wall: place just inside the southern cell
+                            py = gz(mz) + cellSize - inset;
+                            px = gx(mx) + cellSize / 2;
+                            onWall = true;
+                        } else if (mx === ox) {
+                            // west wall: place just inside the western cell
+                            px = gx(mx) + inset;
+                            py = gz(mz) + cellSize / 2;
+                            onWall = true;
+                        } else if (mx === ox + sx) {
+                            // east wall: place just inside the eastern cell
+                            px = gx(mx) + cellSize - inset;
+                            py = gz(mz) + cellSize / 2;
+                            onWall = true;
+                        }
+
+                        // Draw visible hole against the wall: dark center + highlight stroke
+                        ctx.beginPath();
+                        ctx.fillStyle = '#111';
+                        ctx.arc(px, py, radius, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // subtle inner shadow to suggest depth
+                        ctx.beginPath();
+                        ctx.arc(px - Math.sign(px - (gx(mx) + cellSize / 2)) * 1, py - Math.sign(py - (gz(mz) + cellSize / 2)) * 1, Math.max(1, radius - 2), 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+                        ctx.fill();
+
+                        ctx.strokeStyle = '#ffd86b';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw doors on top of walls but beneath the grid overlay
+            if (doorSegments.length) {
+                ctx.lineWidth = doorLW;
+                for (let i = 0; i < doorSegments.length; i++) {
+                    const seg = doorSegments[i];
+                    ctx.strokeStyle = seg.color;
+                    ctx.beginPath();
+                    ctx.moveTo(seg.x1, seg.y1);
+                    ctx.lineTo(seg.x2, seg.y2);
+                    ctx.stroke();
+                }
+            }
+
+            // draw overlay grid and coordinate labels (on top of rooms)
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+            for (let xi = 0; xi <= mapW; xi++) {
+                const px = offsetX + xi * cellSize + 0.5;
+                ctx.beginPath(); ctx.moveTo(px, offsetY); ctx.lineTo(px, offsetY + mapH * cellSize); ctx.stroke();
+            }
+            for (let zi = 0; zi <= mapH; zi++) {
+                const py = offsetY + zi * cellSize + 0.5;
+                ctx.beginPath(); ctx.moveTo(offsetX, py); ctx.lineTo(offsetX + mapW * cellSize, py); ctx.stroke();
+            }
+
+            // coordinate labels (use a slightly stronger color)
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            ctx.font = Math.max(10, Math.floor(cellSize * 0.28)) + 'px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            for (let xCoord = Math.ceil(minX); xCoord <= Math.floor(maxX); xCoord++) {
+                const px = gx(xCoord) + Math.floor(cellSize / 2);
+                if (px >= offsetX && px <= offsetX + mapW * cellSize) {
+                    ctx.fillText(String(xCoord), px, offsetY - 6);
+                }
+            }
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let zCoord = Math.ceil(minZ); zCoord <= Math.floor(maxZ); zCoord++) {
+                const py = gz(zCoord) + Math.floor(cellSize / 2);
+                if (py >= offsetY && py <= offsetY + mapH * cellSize) {
+                    ctx.fillText(String(zCoord), offsetX - 8, py);
+                }
+            }
+            ctx.textAlign = 'start';
+            ctx.textBaseline = 'alphabetic';
+
+            // draw legend
+            const legendX = canvas.width - 160;
+            const legendY = 10;
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(legendX - 6, legendY - 6, 150, 120);
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = '#fff';
+            ctx.fillText('Legend:', legendX, legendY + 12);
+            ctx.fillStyle = '#2b6b2b'; ctx.fillRect(legendX, legendY + 22, 14, 14); ctx.fillStyle = '#fff'; ctx.fillText('Room floor', legendX + 22, legendY + 34);
+            ctx.fillStyle = '#444'; ctx.fillRect(legendX, legendY + 40, 14, 14); ctx.fillStyle = '#fff'; ctx.fillText('Wall', legendX + 22, legendY + 52);
+            ctx.fillStyle = '#e33'; ctx.fillRect(legendX, legendY + 58, 14, 8); ctx.fillStyle = '#fff'; ctx.fillText('Door', legendX + 22, legendY + 64);
+            ctx.fillStyle = '#600'; ctx.fillRect(legendX, legendY + 74, 14, 8); ctx.fillStyle = '#fff'; ctx.fillText('Door (invalid rotation)', legendX + 22, legendY + 80);
+            ctx.beginPath(); ctx.fillStyle = '#222'; ctx.arc(legendX + 7, legendY + 98, 6, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#ffd86b'; ctx.stroke(); ctx.fillStyle = '#fff'; ctx.fillText('Mouse hole', legendX + 22, legendY + 102);
+        }
+
+        // wire up editor change -> render (debounced)
+        const debouncedRender = debounce(render, 180);
+        editor.addEventListener('input', debouncedRender);
+
+        // Make editor a bit taller for usability
+        editor.style.width = '100%';
+        editor.style.height = '160px';
+        editor.style.boxSizing = 'border-box';
+        editor.style.fontFamily = 'monospace';
+
+        // Kick things off
+        resizeCanvas();
+
+        // expose render for debugging
+        window._renderMap = render;
+
+        document.onload = function () { };
+    </script>
+</body>
+
+</html>
