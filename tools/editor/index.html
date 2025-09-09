@@ -107,36 +107,109 @@
             Clockwise180: 2,
             Clockwise270: 3,
         };
-
+        const floor = 0;
+        const ceiling = 1;
+        const walls = [2, 3, 4];
         // Map data: two example rooms
         let data = [
             {
-                origin: [0, 0, 0],
-                size: [9, 9, 3],
-                floorModel: 'floor',
-                ceilingModel: 'ceiling',
-                wallModel: 'wall',
-                doors: [
-                    // a door at x=9 z=4 (global coords)
-                    { x: 9, z: 4, rotation: Rotation.Clockwise90 },
+                'origin': [0, 0, 5],
+                'size': [7, 9, 3],
+                'floorModel': floor,
+                'ceilingModel': ceiling,
+                'wallModel': walls[0],
+                'doors': [
+                    {
+                        'x': 7,
+                        'z': 1,
+                        'rotation': 1,
+                    },
+                    {
+                        'x': 1,
+                        'z': 9,
+                        'rotation': 0,
+                    },
                 ],
-                mouseHoles: [{ x: 0, z: 4, rotation: Rotation.None }],
-                contents: [
-                    { model: 'chair', pos: [2, 0.125, 4] },
-                ],
+                'mouseHoles': [],
+                'contents': [],
             },
             {
-                origin: [9, 0, 0],
-                size: [9, 9, 3],
-                floorModel: 'floor',
-                ceilingModel: 'ceiling',
-                wallModel: 'wall',
-                doors: [
-                    { x: 0, z: 4, rotation: Rotation.Clockwise270 },
+                'origin': [7, 0, 5],
+                'size': [5, 3, 3],
+                'floorModel': floor,
+                'ceilingModel': ceiling,
+                'wallModel': walls[0],
+                'doors': [
+                    {
+                        'x': 0,
+                        'z': 1,
+                        'rotation': 3,
+                    },
                 ],
-                contents: [
-                    { model: 'bomb', pos: [4, 0.125, 4] },
+                'contents': [],
+            },
+            {
+                'origin': [0, 0, 14],
+                'size': [7, 4, 3],
+                'floorModel': floor,
+                'ceilingModel': ceiling,
+                'wallModel': walls[0],
+                'doors': [
+                    {
+                        'x': 1,
+                        'z': 0,
+                        'rotation': 2,
+                    },
+                    {
+                        'x': 7,
+                        'z': 1,
+                        'rotation': 1,
+                    },
                 ],
+                'mouseHoles': [],
+                'contents': [],
+            },
+            {
+                'origin': [7, 0, 10],
+                'size': [5, 7, 3],
+                'floorModel': floor,
+                'ceilingModel': ceiling,
+                'wallModel': walls[0],
+                'doors': [
+                    {
+                        'x': 0,
+                        'z': 5,
+                        'rotation': 3,
+                    },
+                    {
+                        'x': 3,
+                        'z': 0,
+                        'rotation': 2,
+                    },
+                ],
+                'mouseHoles': [],
+                'contents': [],
+            },
+            {
+                'origin': [7, 0, 8],
+                'size': [6, 2, 3],
+                'floorModel': floor,
+                'ceilingModel': ceiling,
+                'wallModel': walls[0],
+                'doors': [
+                    {
+                        'x': 3,
+                        'z': 2,
+                        'rotation': 0,
+                    },
+                    {
+                        'x': 5,
+                        'z': 0,
+                        'rotation': 2,
+                    },
+                ],
+                'mouseHoles': [],
+                'contents': [],
             },
         ];
 
@@ -145,8 +218,49 @@
         const canvas = document.getElementById('map-rendering');
         const ctx = canvas.getContext('2d');
 
+        // Serialize current rooms into a JS-like literal preserving model tokens
+        function roomsToJsLiteral(rooms) {
+            function q(val) { return typeof val === 'string' ? `'${val}'` : String(val); }
+            function arr(a) { return `[${a.map(q).join(', ')}]`; }
+            return '[\n' + rooms.map(r => {
+                const wmIdx = Array.isArray(walls) ? walls.indexOf(r.wallModel) : -1;
+                const wallExpr = wmIdx >= 0 ? `walls[${wmIdx}]` : q(r.wallModel);
+                const floorExpr = r.floorModel === floor ? 'floor' : q(r.floorModel);
+                const ceilExpr = r.ceilingModel === ceiling ? 'ceiling' : q(r.ceilingModel);
+
+                const doors = Array.isArray(r.doors) ? r.doors.map(d => `{
+        'x': ${q(d.x)},
+        'z': ${q(d.z)},
+        'rotation': ${q(d.rotation)},
+    }`).join(',\n    ') : '';
+                const mouseHoles = Array.isArray(r.mouseHoles) ? r.mouseHoles.map(m => `{
+                        'x': ${q(m.x)},
+                        'z': ${q(m.z)},
+                        'rotation': ${q(m.rotation)},
+                    }`).join(',\n    ') : '';
+                const contents = Array.isArray(r.contents) ? r.contents.map(c => `{
+                        'model': ${q(c.model)},
+                        'pos': ${arr(c.pos || [])},
+                    }`).join(',\n    ') : '';
+
+                return `  {
+    'origin': ${arr(r.origin || [0, 0, 0])},
+    'size': ${arr(r.size || [1, 1, 1])},
+    'floorModel': ${floorExpr},
+    'ceilingModel': ${ceilExpr},
+    'wallModel': ${wallExpr},
+    'doors': [${doors ? `\n    ${doors}\n    ` : ''}],
+    'mouseHoles': [${mouseHoles ? `\n    ${mouseHoles}\n    ` : ''}],
+    'contents': [${contents ? `\n    ${contents}\n    ` : ''}],
+  }`;
+            }).join(',\n') + '\n]';
+        }
+
         // Pretty-print initial data into the textarea
-        editor.value = JSON.stringify(data, null, 2);
+        // Initialize editor with a JS-like literal that preserves tokens (floor/ceiling/walls)
+        if (!editor.value.trim()) {
+            editor.value = roomsToJsLiteral(data);
+        }
 
         // Simple debounce helper
         function debounce(fn, wait) {
@@ -170,15 +284,26 @@
 
         // Convert input text to data structure; returns null on error
         function parseEditor() {
+            const txt = editor.value.trim();
+            if (!txt) return data; // fall back to in-memory sample
+            // Try strict JSON first
             try {
-                const parsed = JSON.parse(editor.value);
+                const parsed = JSON.parse(txt);
                 editor.style.borderColor = '';
                 return parsed;
-            } catch (e) {
-                // visually indicate invalid JSON
-                editor.style.borderColor = 'crimson';
-                return null;
-            }
+            } catch (_) { /* fall through */ }
+            // Try evaluating as a JS array literal with constants in scope
+            try {
+                const fn = new Function('Rotation', 'floor', 'ceiling', 'walls', `return (${txt});`);
+                const parsed = fn(Rotation, floor, ceiling, walls);
+                if (Array.isArray(parsed)) {
+                    editor.style.borderColor = '';
+                    return parsed;
+                }
+            } catch (_) { /* ignore */ }
+            // indicate invalid input
+            editor.style.borderColor = 'crimson';
+            return null;
         }
 
         // Main render function: draws top-down overview of rooms/walls/doors/mouseholes
@@ -431,7 +556,7 @@
             ctx.fillText('Legend:', legendX, legendY + 12);
             ctx.fillStyle = '#2b6b2b'; ctx.fillRect(legendX, legendY + 22, 14, 14); ctx.fillStyle = '#fff'; ctx.fillText('Room floor', legendX + 22, legendY + 34);
             ctx.fillStyle = '#444'; ctx.fillRect(legendX, legendY + 40, 14, 14); ctx.fillStyle = '#fff'; ctx.fillText('Wall', legendX + 22, legendY + 52);
-            ctx.fillStyle = '#e33'; ctx.fillRect(legendX, legendY + 58, 14, 8); ctx.fillStyle = '#fff'; ctx.fillText('Door', legendX + 22, legendY + 64);
+            ctx.fillStyle = '#33e'; ctx.fillRect(legendX, legendY + 58, 14, 8); ctx.fillStyle = '#fff'; ctx.fillText('Door', legendX + 22, legendY + 64);
             ctx.fillStyle = '#600'; ctx.fillRect(legendX, legendY + 74, 14, 8); ctx.fillStyle = '#fff'; ctx.fillText('Door (invalid rotation)', legendX + 22, legendY + 80);
             ctx.beginPath(); ctx.fillStyle = '#222'; ctx.arc(legendX + 7, legendY + 98, 6, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#ffd86b'; ctx.stroke(); ctx.fillStyle = '#fff'; ctx.fillText('Mouse hole', legendX + 22, legendY + 102);
         }

@@ -61,7 +61,7 @@ AFRAME.registerComponent('smooth-locomotion', {
         const g = this._navGrid!;
         const r = 0.2; // player radius (meters). Tweak 0.25–0.35 for door clearance.
         const offX = 5,
-            offZ = 5; // world entity is positioned at (-5, 0, -5) → shift to grid indices
+            offZ = 10; // world entity is positioned at (-5, 0, -5) → shift to grid indices
         const blocked = (x: number, z: number) => {
             const W = g.w,
                 D = g.d,

@@ -24,8 +24,10 @@ Must Have:
     ☐ Bites. When a mouse bites you, you lose a life. After biting the mouse runs away.
     Level:
         ✔ Better way to generate levels @done(25-09-06 21:50)
+        ☐ Design a level
         ☐ Spawning mice at holes
-        ☐ Colliding with walls
+        ☐ Colliding with walls need to be beter.
+            ~ Right now you stay too far off the walls
 
 
 Should Have:
