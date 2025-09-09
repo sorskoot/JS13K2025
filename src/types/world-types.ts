@@ -13,7 +13,8 @@ export type HoleSpec = {
     x: number;
     z: number;
     rotation: Rotation;
-    // More to come :)
+    spawnRate?: number; // mice per minute, default 1
+    active?: boolean; // if false, no mice will spawn
 };
 
 export type Room = {

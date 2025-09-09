@@ -2,10 +2,10 @@
     "compilerOptions": {
         "forceConsistentCasingInFileNames": true,
         "pretty": true,
-        "allowJs": true,
+        "allowJs": false,
         "strict": true,
         "noEmit": true,
-        "noImplicitAny": false,
+        "noImplicitAny": true,
         "noImplicitOverride": true,
         "strictNullChecks": true,
         "target": "esnext",

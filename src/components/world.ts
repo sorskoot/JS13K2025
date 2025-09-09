@@ -6,7 +6,7 @@ import {door, walls} from '../models.js';
 import {rooms} from '../map.js';
 
 // Build a single room into the engine
-function buildRoom(engine: any, room: Room, occ: Uint8Array, gridW: number) {
+function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: number, gameSystem: GameSystem) {
     const ox = room.origin[0];
     const oy = room.origin[1];
     const oz = room.origin[2];
@@ -36,12 +36,7 @@ function buildRoom(engine: any, room: Room, occ: Uint8Array, gridW: number) {
 
     const mouseHoleAt = (lx: number, ly: number, lz: number) => {
         if (!room.mouseHoles || ly >= 1) return undefined;
-        let f = room.mouseHoles.find((h) => h.x === lx && h.z === lz);
-        // console.log(`checking: lx=${lx} lz=${lz} ly=${ly} ${room.mouseHoles.length}`);
-        if (f) {
-            console.log('mouse hole at', lx, lz);
-        }
-        return f;
+        return room.mouseHoles.find((h) => h.x === lx && h.z === lz);
     };
 
     // perimeter walls: north (+z), south (0), west (0), east (+x)
@@ -136,6 +131,11 @@ function buildRoom(engine: any, room: Room, occ: Uint8Array, gridW: number) {
             occ[idx(cx, cz)] = 1;
             const offsetx = d.rotation === Rotation.Clockwise180 ? -1 : 0;
             const offsety = d.rotation === Rotation.Clockwise90 ? -1 : 0;
+            gameSystem.registerMouseHole({
+                x: cx + offsetx,
+                z: cz + offsety,
+                rotation: d.rotation,
+            });
             addModelFromEncoded(
                 walls[1],
                 engine,
@@ -179,19 +179,18 @@ AFRAME.registerComponent('world', {
             metersY = 4,
             metersZ = 30;
         const engine = new VoxelEngine({metersX, metersY, metersZ});
+        const gameSystem = this.el.sceneEl?.systems['game'] as GameSystem;
 
         // 2D occupancy grid (meter-resolution)
         const occ = new Uint8Array(metersX * metersZ);
-        for (const r of rooms) buildRoom(engine, r, occ, metersX);
-
-        const gameSystem = this.el.sceneEl?.systems['game'] as GameSystem;
+        for (const r of rooms) buildRoom(engine, r, occ, metersX, gameSystem);
         gameSystem.grid = {w: metersX, d: metersZ, occ};
+        //rooms.forEach((r) => r.mouseHoles?.forEach((h) => gameSystem.registerMouseHole(h)));
+
         const voxelMesh = engine.getMesh();
-        // Convert THREE.Mesh to an A-Frame entity
         this.el.setObject3D('mesh', voxelMesh);
 
-        // Optionally, position the mesh
+        // move world slowly down to align floor with y=0
         voxelMesh.position.set(0, -0.125, 0);
-        // voxelMesh.rotation.set(0, -90, 0);
     },
 });
