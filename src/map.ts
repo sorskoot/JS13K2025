@@ -22,7 +22,12 @@ export const rooms: Room[] = [
                 'rotation': 0,
             },
         ],
-        'mouseHoles': [],
+        'mouseHoles': [
+            {'x': 7, 'z': 2, 'rotation': 2},
+            {'x': 0, 'z': 2, 'rotation': 0},
+            {'x': 2, 'z': 0, 'rotation': 3},
+            {'x': 4, 'z': 9, 'rotation': 1},
+        ],
         'contents': [],
     },
     {

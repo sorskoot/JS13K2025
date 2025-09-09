@@ -36,7 +36,12 @@ function buildRoom(engine: any, room: Room, occ: Uint8Array, gridW: number) {
 
     const mouseHoleAt = (lx: number, ly: number, lz: number) => {
         if (!room.mouseHoles || ly >= 1) return undefined;
-        return room.mouseHoles.find((h) => h.x === lx && h.z === lz);
+        let f = room.mouseHoles.find((h) => h.x === lx && h.z === lz);
+        // console.log(`checking: lx=${lx} lz=${lz} ly=${ly} ${room.mouseHoles.length}`);
+        if (f) {
+            console.log('mouse hole at', lx, lz);
+        }
+        return f;
     };
 
     // perimeter walls: north (+z), south (0), west (0), east (+x)
@@ -123,12 +128,20 @@ function buildRoom(engine: any, room: Room, occ: Uint8Array, gridW: number) {
             );
         }
     }
+
     if (room.mouseHoles) {
         for (const d of room.mouseHoles) {
             const cx = ox + d.x;
             const cz = oz + d.z;
             occ[idx(cx, cz)] = 1;
-            addModelFromEncoded(walls[1], engine, d.rotation, new THREE.Vector3(ox + d.x, 0.125, oz + d.z));
+            const offsetx = d.rotation === Rotation.Clockwise180 ? -1 : 0;
+            const offsety = d.rotation === Rotation.Clockwise90 ? -1 : 0;
+            addModelFromEncoded(
+                walls[1],
+                engine,
+                d.rotation,
+                new THREE.Vector3(ox + d.x + offsetx, 0.125, oz + d.z + offsety)
+            );
         }
     }
 

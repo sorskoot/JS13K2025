@@ -62,7 +62,6 @@ AFRAME.registerComponent('mouse', {
         const goal: [number, number] = [3, 3];
 
         const path = astar(grid, start, goal);
-        console.log(path);
 
         this._id = (this.el.sceneEl!.systems.coroutine as CoroutineSystem).addCoroutine(new Coroutine(this.validate()));
     },
