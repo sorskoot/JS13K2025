@@ -184,7 +184,7 @@ AFRAME.registerComponent('world', {
         // 2D occupancy grid (meter-resolution)
         const occ = new Uint8Array(metersX * metersZ);
         for (const r of rooms) buildRoom(engine, r, occ, metersX, gameSystem);
-        gameSystem.grid = {w: metersX, d: metersZ, occ};
+        gameSystem.setGrid(metersX, metersZ, occ);
         //rooms.forEach((r) => r.mouseHoles?.forEach((h) => gameSystem.registerMouseHole(h)));
 
         const voxelMesh = engine.getMesh();

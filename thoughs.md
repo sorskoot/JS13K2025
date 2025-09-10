@@ -54,3 +54,8 @@ Parcour like endless runner. You play as a black cat running on the rooftops and
 
 - How to keep this interesting?
 - How to make it about a black cat?
+
+## Possible Optimizations
+
+- In the production bundle there are a lot of `THREE.Vector3`. This can probably be replaced with a shortened version.
+- There's an alternative commented for the map. That would basically remove all named values.

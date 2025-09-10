@@ -4,6 +4,7 @@ import {Rotation} from '../lib/encoder.js';
 import {HoleSpec} from '../types/world-types.js';
 import {Coroutine, CoroutineSystem, waitForSeconds} from './coroutine.js';
 
+declare const DEBUG: boolean;
 const schema = {} as const;
 
 type GameData = DataOf<typeof schema>;
@@ -14,6 +15,7 @@ export type NavGrid = {
 };
 export type GameSystem = System<GameData> & {
     grid: NavGrid;
+    setGrid: (w: number, d: number, occ: Uint8Array) => void;
     registerMouseHole: (hole: HoleSpec) => void;
     blockMouseHole: (x: number, z: number) => void;
     _mouseHoles: Map<string, HoleSpec>;
@@ -37,6 +39,31 @@ AFRAME.registerSystem('game', {
             if (hole.active) return;
             hole.active = this._activateMouseHole(hole);
         });
+    },
+    setGrid(this: GameSystem, w: number, d: number, occ: Uint8Array) {
+        this.grid = {w, d, occ};
+
+        if (DEBUG) {
+            //draw grid to canvas for debugging
+            const canvas = document.createElement('canvas');
+            const scale = 10;
+            canvas.width = w * scale;
+            canvas.height = d * scale;
+            const ctx = canvas.getContext('2d')!;
+
+            for (let i = 0; i < occ.length; i++) {
+                // each cell is 10x10 pixels
+                const x = (i % w) * scale;
+                const y = Math.floor(i / w) * scale;
+                ctx.fillStyle = occ[i] ? 'black' : 'white';
+                ctx.fillRect(x + 2, y + 2, scale - 4, scale - 4);
+            }
+
+            document.body.appendChild(canvas);
+            canvas.style.position = 'absolute';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+        }
     },
     registerMouseHole(this: GameSystem, hole: HoleSpec) {
         // TODO: Add room offset too so holes are in `world` coords
