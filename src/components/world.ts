@@ -196,7 +196,7 @@ AFRAME.registerComponent('world', {
 
         const voxelMesh = engine.getMesh();
         this.el.setObject3D('mesh', voxelMesh);
-
+        gameSystem.worldMesh = this.el.object3D.children[0];
         // move world slowly down to align floor with y=0
         voxelMesh.position.set(0, -0.125, 0);
     },

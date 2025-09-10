@@ -3,7 +3,7 @@ import type {DataOf} from '../lib/aframe-utils.js';
 import {addModelFromEncoded} from '../lib/encoder.js';
 import {VoxelEngine} from '../lib/voxelengine.js';
 import {Coroutine, CoroutineSystem, waitForSeconds} from '../systems/coroutine.js';
-import {Vector3} from 'three';
+import {BufferGeometry, Vector3} from 'three';
 import {GameSystem} from '../systems/game.js';
 
 const schema = {
@@ -16,9 +16,9 @@ const schema = {
      */
     s: {type: 'number', default: 0.02},
     /**
-     * ag: aggro radius
+     * ar: attack radius
      */
-    ag: {type: 'number', default: 1.6},
+    ar: {type: 'number', default: 1.0},
     /**
      * hm: hide ms
      */
@@ -51,15 +51,20 @@ type MouseComponent = Component<MouseData> & {
      * @param targetPos The position to check
      * @returns True if there is a line of sight, false otherwise
      */
-    _hasLOS: (targetPos: Vector3) => boolean;
+    _hasLOS: () => boolean;
 
     _game: GameSystem;
+    _moveTo?: [number, number, number, number]; // x,z old and x,z target position to move to, undefined when not moving
+    _t?: number; // time accumulator for movement
 };
 enum State {
     wander = 0,
     attack = 1,
     hide = 2,
 }
+
+const c1 = new THREE.Vector3(); // temp vectors for LOS
+const c2 = new THREE.Vector3();
 
 AFRAME.registerComponent('mouse', {
     schema,
@@ -70,6 +75,15 @@ AFRAME.registerComponent('mouse', {
 
         addModelFromEncoded(mouse, engine);
         const voxelMesh = engine.getMesh();
+        const geom = voxelMesh.geometry as BufferGeometry;
+        geom.computeBoundingBox();
+        const bb = geom.boundingBox!;
+        const centerX = (bb.min.x + bb.max.x) / 2;
+        const centerZ = (bb.min.z + bb.max.z) / 2;
+        // translate so center X/Z -> 0, but keep Y so minY -> 0
+        geom.translate(-centerX, -bb.min.y, -centerZ);
+        //geom.computeBoundingSphere();
+
         this.el.setObject3D('mesh', voxelMesh);
         this._originPosition = this.el.object3D.position.clone();
         // this.data.t;
@@ -91,132 +105,120 @@ AFRAME.registerComponent('mouse', {
             new Coroutine(this.ai())
         );
     },
-    _hasLOS: function (this: MouseComponent, targetPos: Vector3) {
-        const grid = this._game.grid;
-
-        // Get horizontal integer cell coords (x -> width, z -> depth)
-        const start = new THREE.Vector3();
-        this.el.object3D.getWorldPosition(start);
-        const sx = Math.floor(start.x);
-        const sz = Math.floor(start.z);
-        const tx = Math.floor(targetPos.x);
-        const tz = Math.floor(targetPos.z);
-
-        const w = grid.w;
-        const d = grid.d;
-        const occ = grid.occ;
-
-        const inBounds = (x: number, z: number) => x >= 0 && z >= 0 && x < w && z < d;
-
-        // Bresenham's line algorithm on integer grid from (sx,sz) -> (tx,tz)
-        let x0 = sx,
-            y0 = sz,
-            x1 = tx,
-            y1 = tz;
-        const dx = Math.abs(x1 - x0);
-        const sxStep = x0 < x1 ? 1 : -1;
-        const dy = Math.abs(y1 - y0);
-        const syStep = y0 < y1 ? 1 : -1;
-        let err = (dx > dy ? dx : -dy) / 2;
-
-        // Walk the grid cells and fail if an occupied cell (==1) is encountered.
-        while (true) {
-            if (inBounds(x0, y0)) {
-                // occ indexing: row-major with z as row and x as column: index = z * w + x
-                if (occ[y0 * w + x0]) {
-                    // blocked
-                    return false;
-                }
+    tick: function (this: MouseComponent, time: number, timeDelta: number) {
+        if (this._moveTo) {
+            if (this._t === undefined) {
+                this._t = 0;
             }
-            if (x0 === x1 && y0 === y1) break;
-            const e2 = err;
-            if (e2 > -dx) {
-                err -= dy;
-                x0 += sxStep;
-            }
-            if (e2 < dy) {
-                err += dx;
-                y0 += syStep;
+            this._t += (timeDelta / 1000) * 1.3;
+            // somehow lerp from old to new position over time
+            const x = THREE.MathUtils.lerp(this._moveTo[0], this._moveTo[2], this._t);
+            const z = THREE.MathUtils.lerp(this._moveTo[1], this._moveTo[3], this._t);
+            this.el.setAttribute('position', {x, y: 0, z});
+            // rotate to movement direction
+            const dir = Math.atan2(this._moveTo[2] - this._moveTo[0], this._moveTo[3] - this._moveTo[1]);
+            this.el.setAttribute('rotation', {x: 0, y: (dir * 180) / Math.PI - 90, z: 0});
+            if (this._t > 1) {
+                this._t = undefined;
+                this._moveTo = undefined;
             }
         }
-
-        // no blockers found on the grid line -> visible
-        return true;
     },
-    _getPlayerPosition: function (this: MouseComponent) {
-        const scene = this.el.sceneEl!;
-        const camEl = scene.camera!;
-        if (!camEl) return null;
-        const v = new THREE.Vector3();
-        camEl.getWorldPosition(v);
-        return v;
+    _hasLOS: function (this: MouseComponent): boolean {
+        c1.set(this.el.object3D.position.x, 0.5, this.el.object3D.position.z);
+        c2.set(this._game.currentPlayerPos[0], 0.5, this._game.currentPlayerPos[1]);
+        return this._game.rayCast(c1, c2);
     },
     ai: function* (this: MouseComponent) {
         let state = State.wander;
         while (true) {
-            // indefinite loop
-            yield* waitForSeconds(1);
-            const randomX = ~~(Math.random() * 2) - 1; // -1, 0, or 1
-            const randomZ = ~~(Math.random() * 2) - 1; // -1, 0, or 1
-            // can we go there?
+            const pos = this.el.object3D.position;
 
-            console.log('Wandering around...');
+            if (state === State.hide) {
+                // run back to origin
+                const dirX = this._originPosition.x - pos.x;
+                const dirZ = this._originPosition.z - pos.z;
+                const dist = Math.sqrt(dirX * dirX + dirZ * dirZ);
+                if (dist > 1.8) {
+                    const normX = dirX / dist;
+                    const normZ = dirZ / dist;
+                    const stepX = Math.abs(normX) < 0.5 ? 0 : normX > 0 ? 1 : -1;
+                    const stepZ = Math.abs(normZ) < 0.5 ? 0 : normZ > 0 ? 1 : -1;
+                    const targetX = ~~(pos.x + stepX);
+                    const targetZ = ~~(pos.z + stepZ);
+                    if (this._game.isEmpty(targetX, targetZ)) {
+                        this._moveTo = [pos.x, pos.z, targetX + 0.5, targetZ + 0.5]; // add 0.5 to center in the cell
+
+                        while (this._moveTo) {
+                            yield;
+                        }
+                    } else {
+                        this._moveTo = undefined;
+                        yield;
+                    }
+                } else {
+                    this.el.setAttribute('self-destruct', {timer: 1});
+                    return; // reached origin, despawn end of coroutine
+                }
+                continue; // no other states, just run back to origin
+            }
+
+            // What do we need to do?
+            if (state === State.wander && this._hasLOS()) {
+                state = State.attack;
+            }
+
+            if (state === State.attack) {
+                const dirX = this._game.currentPlayerPos[0] - pos.x;
+                const dirZ = this._game.currentPlayerPos[1] - pos.z;
+                const dist = Math.sqrt(dirX * dirX + dirZ * dirZ);
+                //TODO: Might go back to wander if distance is too big.
+                if (dist < this.data.ar) {
+                    console.log('Caught you!');
+                    state = State.hide;
+                    continue;
+                }
+
+                const normX = dirX / dist;
+                const normZ = dirZ / dist;
+                const stepX = Math.abs(normX) < 0.5 ? 0 : normX > 0 ? 1 : -1;
+                const stepZ = Math.abs(normZ) < 0.5 ? 0 : normZ > 0 ? 1 : -1;
+                const targetX = ~~(pos.x + stepX);
+                const targetZ = ~~(pos.z + stepZ);
+                if (this._game.isEmpty(targetX, targetZ)) {
+                    this._moveTo = [pos.x, pos.z, targetX + 0.5, targetZ + 0.5]; // add 0.5 to center in the cell
+
+                    while (this._moveTo) {
+                        yield;
+                    }
+                } else {
+                    this._moveTo = undefined;
+                    state = State.wander;
+                    // cant move directly towards player,
+                    // wander 1 cycle, the try again if LOS.
+
+                    // TODO: improvement would be to move at least left or right to try to get around obstacle
+                }
+            }
+
+            if (state === State.wander) {
+                // Just wandering around
+                const randomX = Math.round(Math.random() * 2) - 1; // -1, 0, or 1
+                const randomZ = Math.round(Math.random() * 2) - 1; // -1, 0, or 1
+                // can we go there?
+
+                const targetX = ~~(pos.x + randomX);
+                const targetZ = ~~(pos.z + randomZ);
+                if (!(randomX === 0 && randomZ === 0) && this._game.isEmpty(targetX, targetZ)) {
+                    this._moveTo = [pos.x, pos.z, targetX + 0.5, targetZ + 0.5]; // add 0.5 to center in the cell
+                } else {
+                    this._moveTo = undefined;
+                    yield;
+                }
+                while (this._moveTo) {
+                    yield;
+                }
+            }
         }
     },
 });
-
-type Point = [number, number];
-
-function astar(grid: number[][], start: Point, goal: Point): Point[] | null {
-    const rows = grid.length;
-    const cols = grid[0].length;
-    const openSet: [number, Point][] = [[0, start]];
-    const cameFrom = new Map<string, Point>();
-    const gScore = new Map<string, number>();
-    gScore.set(start.toString(), 0);
-
-    const h = (pos: Point): number => Math.abs(pos[0] - goal[0]) + Math.abs(pos[1] - goal[1]);
-
-    const neighbors = (pos: Point): Point[] => {
-        const [x, y] = pos;
-        return [
-            [x - 1, y],
-            [x + 1, y],
-            [x, y - 1],
-            [x, y + 1],
-        ]
-            .filter(([nx, ny]) => nx >= 0 && ny >= 0 && nx < rows && ny < cols && grid[nx][ny] === 0)
-            .map(([nx, ny]) => [nx, ny] as Point);
-    };
-
-    while (openSet.length > 0) {
-        openSet.sort((a, b) => a[0] - b[0]);
-        const [, current] = openSet.shift()!;
-        const key = current.toString();
-
-        if (current[0] === goal[0] && current[1] === goal[1]) {
-            const path: Point[] = [];
-            let currKey = key;
-            while (cameFrom.has(currKey)) {
-                const prev = cameFrom.get(currKey)!;
-                path.push([+currKey.split(',')[0], +currKey.split(',')[1]]);
-                currKey = prev.toString();
-            }
-            path.push(start);
-            return path.reverse();
-        }
-
-        for (const neighbor of neighbors(current)) {
-            const neighborKey = neighbor.toString();
-            const tentativeG = gScore.get(key)! + 1;
-            if (tentativeG < (gScore.get(neighborKey) ?? Infinity)) {
-                cameFrom.set(neighborKey, current);
-                gScore.set(neighborKey, tentativeG);
-                const fScore = tentativeG + h(neighbor);
-                openSet.push([fScore, neighbor]);
-            }
-        }
-    }
-
-    return null;
-}

@@ -3,10 +3,11 @@ import {DataOf} from '../lib/aframe-utils.js';
 import {Rotation} from '../lib/encoder.js';
 import {HoleSpec} from '../types/world-types.js';
 import {Coroutine, CoroutineSystem, waitForSeconds} from './coroutine.js';
+import {Object3D, Vector3} from 'three';
 
 declare const DEBUG: boolean;
 const schema = {} as const;
-
+const v = new THREE.Vector3();
 type GameData = DataOf<typeof schema>;
 export type NavGrid = {
     w: number;
@@ -18,11 +19,16 @@ export type GameSystem = System<GameData> & {
     setGrid: (w: number, d: number, occ: Uint8Array) => void;
     registerMouseHole: (hole: HoleSpec) => void;
     blockMouseHole: (x: number, z: number) => void;
+    isEmpty: (x: number, z: number) => boolean;
+    rayCast(this: GameSystem, from: Vector3, to: Vector3): boolean;
     _mouseHoles: Map<string, HoleSpec>;
     _coroutines: Map<string, number>;
     _coroutineSystem: CoroutineSystem;
     _activateMouseHole: (hole: HoleSpec) => boolean;
     _spawnMouseAt: (hole: HoleSpec) => Generator<any, void, unknown>;
+    _getPlayerPosition: () => [number, number];
+    currentPlayerPos: [number, number];
+    worldMesh?: Object3D;
 };
 
 AFRAME.registerSystem('game', {
@@ -32,6 +38,7 @@ AFRAME.registerSystem('game', {
         this._mouseHoles = new Map();
         this._coroutines = new Map();
         this._coroutineSystem = this.el.sceneEl!.systems['coroutine'] as CoroutineSystem;
+        //this._currentPlayerPos = this._getPlayerPosition();
     },
     tick: function (this: GameSystem, time: number, timeDelta: number) {
         // update mouse holes and spawn mice as needed
@@ -39,10 +46,28 @@ AFRAME.registerSystem('game', {
             if (hole.active) return;
             hole.active = this._activateMouseHole(hole);
         });
+        this.currentPlayerPos = this._getPlayerPosition();
     },
     isEmpty(this: GameSystem, x: number, z: number): boolean {
         const g = this.grid;
         return x >= 0 && z >= 0 && x < g.w && z < g.d && g.occ[z * g.w + x] === 0;
+    },
+    rayCast(this: GameSystem, from: Vector3, to: Vector3): boolean {
+        // Direction from mouse to player
+        const direction = to.clone().sub(from).normalize();
+
+        // Create raycaster (one-off, not continuous)
+        const raycaster = new THREE.Raycaster(from, direction, 0.25, 10); //from.distanceTo(to));
+
+        // Cast ray against world mesh
+        const intersects = raycaster.intersectObject(this.worldMesh!, false); // false = no recursive children
+
+        // If any intersection is closer than the target, LOS is blocked
+        if (intersects.length > 0 && intersects[0].distance < from.distanceTo(to)) {
+            return false; // Hit something (wall/voxel) before reaching player
+        }
+
+        return true; // Clear LOS
     },
     setGrid(this: GameSystem, w: number, d: number, occ: Uint8Array) {
         this.grid = {w, d, occ};
@@ -98,7 +123,13 @@ AFRAME.registerSystem('game', {
         this._coroutineSystem.stopCoroutine(this._coroutines.get(key) || -1);
         this._mouseHoles.delete(key);
     },
-
+    playerPos(this: GameSystem): [number, number] {
+        return this.currentPlayerPos;
+    },
+    _getPlayerPosition: function (this: GameSystem): [number, number] {
+        this.el.sceneEl!.camera!.getWorldPosition(v);
+        return [v.x, v.z];
+    },
     _activateMouseHole(this: GameSystem, hole: HoleSpec): boolean {
         // normally we should check if the
         const id = this._coroutineSystem.addCoroutine(new Coroutine(this._spawnMouseAt(hole)));

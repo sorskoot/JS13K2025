@@ -89,7 +89,7 @@
         "prefix": ["af:m:update", "af:method:update"],
         "description": "Insert A-Frame component update method (typed this + oldData)",
         "body": [
-            "update: function (this: ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Component>, oldData: ${2:Readonly<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data>}) {",
+            "update: function (this: ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Component, oldData: ${2:Readonly<${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}Data>}) {",
             "  // oldData is the previous data object",
             "  $0",
             "},"
