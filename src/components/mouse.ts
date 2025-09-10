@@ -4,6 +4,7 @@ import {addModelFromEncoded} from '../lib/encoder.js';
 import {VoxelEngine} from '../lib/voxelengine.js';
 import {Coroutine, CoroutineSystem, waitForSeconds} from '../systems/coroutine.js';
 import {Vector3} from 'three';
+import {GameSystem} from '../systems/game.js';
 
 const schema = {
     /**
@@ -51,6 +52,8 @@ type MouseComponent = Component<MouseData> & {
      * @returns True if there is a line of sight, false otherwise
      */
     _hasLOS: (targetPos: Vector3) => boolean;
+
+    _game: GameSystem;
 };
 enum State {
     wander = 0,
@@ -70,7 +73,7 @@ AFRAME.registerComponent('mouse', {
         this.el.setObject3D('mesh', voxelMesh);
         this._originPosition = this.el.object3D.position.clone();
         // this.data.t;
-
+        this._game = this.el.sceneEl!.systems['game'] as GameSystem;
         // // dummy A* example
         // const grid = [
         //     [0, 0, 0, 0],
@@ -89,11 +92,7 @@ AFRAME.registerComponent('mouse', {
         );
     },
     _hasLOS: function (this: MouseComponent, targetPos: Vector3) {
-        const THREE = (AFRAME as any).THREE;
-        const scene = this.el.sceneEl!;
-        // Try to get the game's nav grid from the Game system
-        const gameSys = scene.systems && (scene.systems['game'] as any);
-        const grid = gameSys && (gameSys.grid as {w: number; d: number; occ: Uint8Array} | undefined);
+        const grid = this._game.grid;
 
         // Get horizontal integer cell coords (x -> width, z -> depth)
         const start = new THREE.Vector3();
@@ -102,12 +101,6 @@ AFRAME.registerComponent('mouse', {
         const sz = Math.floor(start.z);
         const tx = Math.floor(targetPos.x);
         const tz = Math.floor(targetPos.z);
-
-        // If no grid available, fallback to simple unobstructed assumption (caller may add a raycast fallback later)
-        if (!grid || !grid.occ || typeof grid.w !== 'number' || typeof grid.d !== 'number') {
-            // permissive fallback — treat as visible (safe default so mice still react)
-            return true;
-        }
 
         const w = grid.w;
         const d = grid.d;
@@ -162,7 +155,11 @@ AFRAME.registerComponent('mouse', {
         let state = State.wander;
         while (true) {
             // indefinite loop
-            yield* waitForSeconds(2); // let things settle
+            yield* waitForSeconds(1);
+            const randomX = ~~(Math.random() * 2) - 1; // -1, 0, or 1
+            const randomZ = ~~(Math.random() * 2) - 1; // -1, 0, or 1
+            // can we go there?
+
             console.log('Wandering around...');
         }
     },

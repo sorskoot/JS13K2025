@@ -28,7 +28,7 @@ export const rooms: Room[] = [
             {'x': 2, 'z': 0, 'rotation': 3},
             {'x': 4, 'z': 9, 'rotation': 1},
         ],
-        'contents': [],
+        'contents': [{model: chair, pos: [2, 0.125, 4]}],
     },
     {
         'origin': [7, 0, 5],

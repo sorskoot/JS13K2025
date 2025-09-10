@@ -51,7 +51,7 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
                     Rotation.Clockwise90,
                     new THREE.Vector3(ox + x, oy + y + 0.125, oz + d - 1)
                 );
-                if (y === 0) occ[idx(ox + x, oz + d - 1)] = 1;
+                if (y === 0) occ[idx(ox + x, oz + d - 1)] |= 1;
             }
         }
     }
@@ -65,7 +65,7 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
                     Rotation.Clockwise270,
                     new THREE.Vector3(ox + x, oy + y + 0.125, oz + 0)
                 );
-                if (y === 0) occ[idx(ox + x, oz + 0)] = 1;
+                if (y === 0) occ[idx(ox + x, oz + 0)] |= 2;
             }
         }
     }
@@ -79,7 +79,7 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
                     Rotation.None,
                     new THREE.Vector3(ox + 0, oy + y + 0.125, oz + z)
                 );
-                if (y === 0) occ[idx(ox + 0, oz + z)] = 1;
+                if (y === 0) occ[idx(ox + 0, oz + z)] |= 4;
             }
         }
     }
@@ -93,7 +93,7 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
                     Rotation.Clockwise180,
                     new THREE.Vector3(ox + w - 1, oy + y + 0.125, oz + z)
                 );
-                if (y === 0) occ[idx(ox + w - 1, oz + z)] = 1;
+                if (y === 0) occ[idx(ox + w - 1, oz + z)] |= 8;
             }
         }
     }
@@ -128,9 +128,16 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
         for (const d of room.mouseHoles) {
             const cx = ox + d.x;
             const cz = oz + d.z;
-            occ[idx(cx, cz)] = 1;
             const offsetx = d.rotation === Rotation.Clockwise180 ? -1 : 0;
             const offsety = d.rotation === Rotation.Clockwise90 ? -1 : 0;
+            occ[idx(cx + offsetx, cz + offsety)] |=
+                (d.rotation === Rotation.None
+                    ? 4
+                    : d.rotation === Rotation.Clockwise90
+                    ? 1
+                    : d.rotation === Rotation.Clockwise180
+                    ? 8
+                    : 2) + 16;
             gameSystem.registerMouseHole({
                 x: cx + offsetx,
                 z: cz + offsety,
@@ -149,10 +156,10 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
     if (room.contents) {
         for (const c of room.contents) {
             if (c.pos[1] < 1) {
-                // something above 1 meter we can pass underneath
+                // something above 1 meter we can pass underneath, so no need to mark occupied
                 const cx = ox + c.pos[0];
                 const cz = oz + c.pos[2];
-                occ[idx(cx, cz)] = 1;
+                occ[idx(cx, cz)] |= 32;
             }
             addModelFromEncoded(
                 c.model,

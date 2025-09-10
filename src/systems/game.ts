@@ -40,25 +40,41 @@ AFRAME.registerSystem('game', {
             hole.active = this._activateMouseHole(hole);
         });
     },
+    isEmpty(this: GameSystem, x: number, z: number): boolean {
+        const g = this.grid;
+        return x >= 0 && z >= 0 && x < g.w && z < g.d && g.occ[z * g.w + x] === 0;
+    },
     setGrid(this: GameSystem, w: number, d: number, occ: Uint8Array) {
         this.grid = {w, d, occ};
-
         if (DEBUG) {
-            //draw grid to canvas for debugging
+            //draw grid to canvas for debugging, is removed in production build
             const canvas = document.createElement('canvas');
-            const scale = 10;
-            canvas.width = w * scale;
-            canvas.height = d * scale;
+            canvas.width = (w - 7) * 10;
+            canvas.height = (d - 12) * 10;
             const ctx = canvas.getContext('2d')!;
-
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             for (let i = 0; i < occ.length; i++) {
-                // each cell is 10x10 pixels
-                const x = (i % w) * scale;
-                const y = Math.floor(i / w) * scale;
-                ctx.fillStyle = occ[i] ? 'black' : 'white';
-                ctx.fillRect(x + 2, y + 2, scale - 4, scale - 4);
+                const x = (i % w) * 10;
+                const y = Math.floor(i / w) * 10;
+                ctx.fillStyle = 'lightgray';
+                ctx.fillRect(x + 1, y + 1, 8, 8);
+                ctx.fillStyle = 'black';
+                if (occ[i] & 1) ctx.fillRect(x + 2, y + 6, 6, 2); // south wall
+                if (occ[i] & 2) ctx.fillRect(x + 2, y + 2, 6, 2); // north wall
+                if (occ[i] & 4) ctx.fillRect(x + 2, y + 2, 2, 6); // west wall
+                if (occ[i] & 8) ctx.fillRect(x + 6, y + 2, 2, 6); // east wall
+                if (occ[i] & 16) {
+                    // Mouse hole
+                    ctx.fillStyle = 'brown';
+                    ctx.fillRect(x + 3, y + 3, 4, 4);
+                }
+                if (occ[i] & 32) {
+                    // occupied
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(x + 3, y + 3, 4, 4);
+                }
             }
-
             document.body.appendChild(canvas);
             canvas.style.position = 'absolute';
             canvas.style.top = '0';
