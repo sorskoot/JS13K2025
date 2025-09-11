@@ -29,7 +29,6 @@ AFRAME.registerComponent('shoot', {
         l.setAttribute('position', '0.007 0.07 -.07');
         this.el.appendChild(l);
         const ll = document.createElement('a-box');
-        //<a-box position="0.007 0.07 -5.02" depth="0.2" height="0.05" width="0.05" color="cyan" geometry="depth: 10; height: 0.01; width: 0.01"></a-box>
         ll.setAttribute('position', '0.007 0.07 -5.021');
         ll.setAttribute('depth', '10');
         ll.setAttribute('height', '0.007');

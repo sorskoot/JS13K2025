@@ -60,23 +60,61 @@ AFRAME.registerComponent('smooth-locomotion', {
         // 2D grid collision (ignore floor layers)
         const g = this._navGrid!;
         const r = 0.2; // player radius (meters). Tweak 0.25–0.35 for door clearance.
-        const offX = 0,
-            offZ = 0; // world entity is positioned at (-5, 0, -5) → shift to grid indices
         const blocked = (x: number, z: number) => {
-            const W = g.w,
-                D = g.d,
-                O = g.occ;
             const c = (xx: number, zz: number) => {
-                // apply world→grid meter offset, then clamp
-                let xi = (xx + offX) | 0;
+                let xi = xx | 0;
                 if (xi < 0) xi = 0;
-                else if (xi >= W) xi = W - 1;
-                let zi = (zz + offZ) | 0;
+                else if (xi >= g.w) xi = g.w - 1;
+                let zi = zz | 0;
                 if (zi < 0) zi = 0;
-                else if (zi >= D) zi = D - 1;
-                return O[xi + zi * W];
+                else if (zi >= g.d) zi = g.d - 1;
+                return g.occ[xi + zi * g.w];
             };
-            return (c(x - r, z) | c(x + r, z) | c(x, z - r) | c(x, z + r)) > 0;
+            /*TK: This needs to change when colliding with walls. Walls are not full cells.
+                O[] & 1 => south wall - +y
+                O[] & 2 => north wall - -y
+                O[] & 4 => west wall - -x
+                O[] & 8 => east wall - +x
+                O[] & 16 => Mouse hole - We can ignore this, because they are inside the walls
+                O[] & 32 => occupied - treat as full block
+
+                // We now check the position in 4 locations around the player.
+                // If one of these location is 32 (occupied) we block movement.
+                // Since we need to be able to move closer to the walls, we need to allow a bit more.
+                //
+            */
+            if ((c(x - r, z) | c(x + r, z) | c(x, z - r) | c(x, z + r)) & 32) return true; // One of the positions is occupied, block movement
+            // Now check for walls
+            if (directionVector.x > 0) {
+                // moving +x (east)
+                if (c(x - r, z) & 8) {
+                    console.log('Blocked by east wall');
+                    return true; // east wall
+                }
+            }
+            if (directionVector.x < 0) {
+                // moving -x (west)
+                if (c(x + r, z) & 4) {
+                    console.log('Blocked by west wall');
+                    return true; // west wall
+                }
+            }
+            if (directionVector.z > 0) {
+                // moving +z (south)
+                if (c(x, z - r) & 1) {
+                    console.log('Blocked by south wall');
+                    return true; // south wall
+                }
+            }
+            if (directionVector.z < 0) {
+                // moving -z (north)
+                if (c(x, z + r) & 2) {
+                    console.log('Blocked by north wall');
+                    return true; // north wall
+                }
+            }
+
+            return false;
         };
 
         const nx = pos.x + directionVector.x;
