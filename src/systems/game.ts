@@ -3,10 +3,11 @@ import {DataOf} from '../lib/aframe-utils.js';
 import {Rotation} from '../lib/encoder.js';
 import {HoleSpec} from '../types/world-types.js';
 import {Coroutine, CoroutineSystem, waitForSeconds} from './coroutine.js';
-import {Object3D, Vector3} from 'three';
+import {Intersection, Object3D, Vector3} from 'three';
 
 declare const DEBUG: boolean;
 const schema = {} as const;
+
 const v = new THREE.Vector3();
 type GameData = DataOf<typeof schema>;
 export type NavGrid = {
@@ -20,7 +21,15 @@ export type GameSystem = System<GameData> & {
     registerMouseHole: (hole: HoleSpec) => void;
     blockMouseHole: (x: number, z: number) => void;
     isEmpty: (x: number, z: number) => boolean;
-    rayCast(this: GameSystem, from: Vector3, to: Vector3): boolean;
+    /**
+     * Casts a ray and returns the intersection data (or null if no intersection)
+     */
+    rayCast(this: GameSystem, from: Vector3, to: Vector3): Intersection | null;
+    /*
+     * Regular raycast that returns the intersection data (or null if no intersection)
+     */
+    rayCastD(this: GameSystem, from: Vector3, to: Vector3): Intersection | null;
+    removeMouse: (mouse: Object3D) => void;
     _mouseHoles: Map<string, HoleSpec>;
     _coroutines: Map<string, number>;
     _coroutineSystem: CoroutineSystem;
@@ -29,14 +38,15 @@ export type GameSystem = System<GameData> & {
     _getPlayerPosition: () => [number, number];
     currentPlayerPos: [number, number];
     worldMesh?: Object3D;
+    _objs: Object3D[];
 };
 
 AFRAME.registerSystem('game', {
-    schema: {},
-
+    schema,
     init(this: GameSystem) {
         this._mouseHoles = new Map();
         this._coroutines = new Map();
+        this._objs = [];
         this._coroutineSystem = this.el.sceneEl!.systems['coroutine'] as CoroutineSystem;
         //this._currentPlayerPos = this._getPlayerPosition();
     },
@@ -52,23 +62,25 @@ AFRAME.registerSystem('game', {
         const g = this.grid;
         return x >= 0 && z >= 0 && x < g.w && z < g.d && g.occ[z * g.w + x] === 0;
     },
-    rayCast(this: GameSystem, from: Vector3, to: Vector3): boolean {
-        // Direction from mouse to player
-        const direction = to.clone().sub(from).normalize();
-
+    rayCastD(this: GameSystem, from: Vector3, dir: Vector3): Intersection | null {
         // Create raycaster (one-off, not continuous)
-        const raycaster = new THREE.Raycaster(from, direction, 0.25, 10); //from.distanceTo(to));
+        const raycaster = new THREE.Raycaster(from, dir, 0.25, 25);
 
         // Cast ray against world mesh
-        const intersects = raycaster.intersectObject(this.worldMesh!, false); // false = no recursive children
+        const intersects = raycaster.intersectObjects([this.worldMesh!, ...this._objs], true);
 
-        // If any intersection is closer than the target, LOS is blocked
-        if (intersects.length > 0 && intersects[0].distance < from.distanceTo(to)) {
-            return false; // Hit something (wall/voxel) before reaching player
+        if (intersects.length > 0) {
+            return intersects[0];
         }
 
-        return true; // Clear LOS
+        return null;
     },
+
+    rayCast(this: GameSystem, from: Vector3, to: Vector3): Intersection | null {
+        const direction = to.clone().sub(from).normalize();
+        return this.rayCastD(from, direction);
+    },
+
     setGrid(this: GameSystem, w: number, d: number, occ: Uint8Array) {
         this.grid = {w, d, occ};
         if (DEBUG) {
@@ -136,6 +148,12 @@ AFRAME.registerSystem('game', {
         this._coroutines.set(`${hole.x},${hole.z}`, id);
         return true;
     },
+    removeMouse(this: GameSystem, mouse: Object3D) {
+        const idx = this._objs.indexOf(mouse);
+        if (idx !== -1) {
+            this._objs.splice(idx, 1);
+        }
+    },
     _spawnMouseAt: function* (this: GameSystem, hole: HoleSpec) {
         // wait a random time up to 10 seconds before first spawn so not all mice appear at once
         yield* waitForSeconds(Math.random() * 10);
@@ -143,11 +161,12 @@ AFRAME.registerSystem('game', {
             // spawn mice at the set interval until the hole is blocked
             const mouseEl = document.createElement('a-entity');
             mouseEl.setAttribute('mixin', 'ms');
+            mouseEl.classList.add('r', 'm'); // make raycastable, and "m" for mouse
             // const mouseEl = document.createElement('a-entity');
             // mouseEl.setAttribute('mouse', {t: 0.5});
             mouseEl.setAttribute('position', {x: hole.x + 0.5, y: 0, z: hole.z + 0.5});
             this.el.sceneEl?.appendChild(mouseEl);
-            console.log('Spawned a mouse at', hole.x, hole.z);
+            this._objs.push(mouseEl.object3D);
             yield* waitForSeconds(hole.spawnRate || 15);
         }
     },

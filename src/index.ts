@@ -6,6 +6,7 @@ import './components/snap-rotate.js';
 import './components/shoot.js';
 import './components/self-destruct.js';
 import './components/head-offset.js';
+import './components/particles.js';
 
 import './systems/game.js';
 import './systems/coroutine.js';

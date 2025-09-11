@@ -56,6 +56,7 @@ type MouseComponent = Component<MouseData> & {
     _game: GameSystem;
     _moveTo?: [number, number, number, number]; // x,z old and x,z target position to move to, undefined when not moving
     _t?: number; // time accumulator for movement
+    _die: () => void;
 };
 enum State {
     wander = 0,
@@ -127,13 +128,26 @@ AFRAME.registerComponent('mouse', {
     _hasLOS: function (this: MouseComponent): boolean {
         c1.set(this.el.object3D.position.x, 0.5, this.el.object3D.position.z);
         c2.set(this._game.currentPlayerPos[0], 0.5, this._game.currentPlayerPos[1]);
-        return this._game.rayCast(c1, c2);
+        const i = this._game.rayCast(c1, c2)!;
+        // We have a LOS if the raycast does not hit anything or
+        // hits something further away than the player
+        //return i != null && i.distance < c1.distanceTo(c2);
+        return i.distance > c1.distanceTo(c2);
+    },
+    _die: function (this: MouseComponent) {
+        this._game.removeMouse(this.el.object3D);
+        this.el.setAttribute('self-destruct', {timer: 1});
     },
     ai: function* (this: MouseComponent) {
         let state = State.wander;
+        let d = 0; // counter for getting stuck state. If stuck for too long... Just kill it.
         while (true) {
             const pos = this.el.object3D.position;
-
+            //if pos is outside level kill it
+            if (pos.x < -1 || pos.x > this._game.grid.w || pos.z < -1 || pos.z > this._game.grid.d) {
+                this._die();
+                return;
+            }
             if (state === State.hide) {
                 // run back to origin
                 const dirX = this._originPosition.x - pos.x;
@@ -147,17 +161,22 @@ AFRAME.registerComponent('mouse', {
                     const targetX = ~~(pos.x + stepX);
                     const targetZ = ~~(pos.z + stepZ);
                     if (this._game.isEmpty(targetX, targetZ)) {
+                        d = 0;
                         this._moveTo = [pos.x, pos.z, targetX + 0.5, targetZ + 0.5]; // add 0.5 to center in the cell
-
                         while (this._moveTo) {
                             yield;
                         }
                     } else {
+                        d++;
+                        if (d > 10) {
+                            this._die();
+                            return;
+                        }
                         this._moveTo = undefined;
-                        yield;
+                        yield* waitForSeconds(0.2); // wait a bit
                     }
                 } else {
-                    this.el.setAttribute('self-destruct', {timer: 1});
+                    this._die();
                     return; // reached origin, despawn end of coroutine
                 }
                 continue; // no other states, just run back to origin
