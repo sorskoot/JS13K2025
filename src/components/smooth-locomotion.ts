@@ -85,34 +85,10 @@ AFRAME.registerComponent('smooth-locomotion', {
             */
             if ((c(x - r, z) | c(x + r, z) | c(x, z - r) | c(x, z + r)) & 32) return true; // One of the positions is occupied, block movement
             // Now check for walls
-            if (directionVector.x > 0) {
-                // moving +x (east)
-                if (c(x - r, z) & 8) {
-                    console.log('Blocked by east wall');
-                    return true; // east wall
-                }
-            }
-            if (directionVector.x < 0) {
-                // moving -x (west)
-                if (c(x + r, z) & 4) {
-                    console.log('Blocked by west wall');
-                    return true; // west wall
-                }
-            }
-            if (directionVector.z > 0) {
-                // moving +z (south)
-                if (c(x, z - r) & 1) {
-                    console.log('Blocked by south wall');
-                    return true; // south wall
-                }
-            }
-            if (directionVector.z < 0) {
-                // moving -z (north)
-                if (c(x, z + r) & 2) {
-                    console.log('Blocked by north wall');
-                    return true; // north wall
-                }
-            }
+            if (directionVector.x > 0 && c(x - r, z) & 8) return true; // east wall
+            if (directionVector.x < 0 && c(x + r, z) & 4) return true; // west wall
+            if (directionVector.z > 0 && c(x, z - r) & 1) return true; // south wall
+            if (directionVector.z < 0 && c(x, z + r) & 2) return true; // north wall
 
             return false;
         };
