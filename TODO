@@ -11,9 +11,9 @@ Voxel Engine:
 Must Have:
     Mice:
         ~ The spawn at the mouse holes.
-        ☐ Moving Mice
-        ☐ Attacking Mice
-        ☐ Hiding Mice
+        ✔ Moving Mice @done(25-09-11 15:26)
+        ✔ Attacking Mice @done(25-09-11 15:26)
+        ✔ Hiding Mice @done(25-09-11 15:26)
     Cheese-bomb:
         ☐ Explodes 10 mintes after the game starts
     Win state:
@@ -22,6 +22,8 @@ Must Have:
         ☐ Run out of lives (9)
         ☐ Run out of time (10 minutes)
     ☐ Bites. When a mouse bites you, you lose a life. After biting the mouse runs away.
+    ☐ Shoot Mice
+    ☐ Block Mouseholes
     Level:
         ✔ Better way to generate levels @done(25-09-06 21:50)
         ✔ Design a level @done(25-09-10 15:35)
@@ -31,7 +33,11 @@ Must Have:
     ☐ A global function that returns the room number based on position.
 
 Should Have:
+    ☐ Crappy audio (is better then no audio)
+    ☐ Red flash when bitten (make a red light)
 
 Could Have:
+    ☐ post processing effects (SSAO, Bloom)
 
 Would like:
+    ☐ Randomized levels
