@@ -1,7 +1,7 @@
 import type {Component, Entity} from 'aframe';
 import type {DataOf} from '../lib/aframe-utils.js';
 import {GameSystem} from '../systems/game.js';
-import {Object3D} from 'three';
+import {ButtonEvent} from '../types/world-types.js';
 
 const schema = {} as const;
 
@@ -11,9 +11,7 @@ type ShootComponent = Component<ShootData> & {
     _g: GameSystem;
     _l: Entity;
 };
-interface ButtonEvent {
-    id: number;
-}
+
 const from = new THREE.Vector3();
 const dir = new THREE.Vector3();
 

@@ -27,3 +27,15 @@ export type Room = {
     mouseHoles?: HoleSpec[];
     contents?: {model: string; pos: vec3; rot?: Rotation}[]; // chairs, bombs etc
 };
+
+export interface ButtonEvent {
+    id: number;
+}
+
+export interface InteractEvent {
+    pos: {
+        x: number;
+        y: number;
+        z: number;
+    };
+}

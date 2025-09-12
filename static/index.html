@@ -28,14 +28,11 @@
             <a-entity class="r" shadow="receive: true" world></a-entity>
             <a-entity id="rig" head-offset position="5 0 10">
                 <a-entity id="camera" wasd-controls look-controls camera position="0 1.7 0"></a-entity>
-                <a-entity smooth-locomotion oculus-touch-controls="hand:left;model:false">
-                    <!-- <a-entity id="gunray" raycaster="objects:.clickable;showLine:true" position="0 .07 0"></a-entity> -->
+                <a-entity interact smooth-locomotion oculus-touch-controls="hand:left;model:false">
                     <a-entity paw="" scale="0.1 0.1 0.1" rotation="0 180 0" position="0.05 0 0.1"> </a-entity>
                 </a-entity>
 
                 <a-entity shoot snap-rotate oculus-touch-controls="hand:right;model:false">
-                    <a-entity id="gunray" raycaster="enabled:false;autoRefresh:false;objects:.r"
-                        position="0 .07 0"></a-entity>
                     <a-entity paw="gun:true" scale="0.1 0.1 0.1" rotation="0 180 0" position="0.05 0 0.1"> </a-entity>
                 </a-entity>
             </a-entity>

@@ -8,6 +8,10 @@ Voxel Engine:
         ✔ Do we keep the raytracing? @done(25-09-05 21:03)
         ✔ Lighting? @done(25-09-05 21:03)
 
+Before Release:
+    ☐ Write desciption of the game
+    ☐ Create artwork
+
 Must Have:
     Mice:
         ~ The spawn at the mouse holes.
@@ -38,6 +42,9 @@ Should Have:
 
 Could Have:
     ☐ post processing effects (SSAO, Bloom)
+    ☐ Destructible environments, like doors that block rooms
+    ☐ Make mice attack faster and pathfind to you, beyond rooms and line of sight.
+    ☐ On top of that, add sneak mode to avoid detections, until line of sight.
 
 Would like:
     ☐ Randomized levels

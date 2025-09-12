@@ -1,9 +1,11 @@
 import {System} from 'aframe';
 import {DataOf} from '../lib/aframe-utils.js';
-import {Rotation} from '../lib/encoder.js';
-import {HoleSpec} from '../types/world-types.js';
+import {addModelFromEncoded} from '../lib/encoder.js';
+import {HoleSpec, InteractEvent} from '../types/world-types.js';
 import {Coroutine, CoroutineSystem, waitForSeconds} from './coroutine.js';
 import {Intersection, Object3D, Vector3} from 'three';
+import {VoxelEngine} from '../lib/voxelengine.js';
+import {plank} from '../models.js';
 
 declare const DEBUG: boolean;
 const schema = {} as const;
@@ -48,7 +50,11 @@ AFRAME.registerSystem('game', {
         this._coroutines = new Map();
         this._objs = [];
         this._coroutineSystem = this.el.sceneEl!.systems['coroutine'] as CoroutineSystem;
-        //this._currentPlayerPos = this._getPlayerPosition();
+
+        this.el.sceneEl!.addEventListener('interact', (event: Event) => {
+            const detail = (event as CustomEvent<InteractEvent>).detail;
+            this.blockMouseHole(detail.pos.x, detail.pos.z);
+        });
     },
     tick: function (this: GameSystem, time: number, timeDelta: number) {
         // update mouse holes and spawn mice as needed
@@ -119,7 +125,6 @@ AFRAME.registerSystem('game', {
         }
     },
     registerMouseHole(this: GameSystem, hole: HoleSpec) {
-        // TODO: Add room offset too so holes are in `world` coords
         const key = `${hole.x},${hole.z}`;
         this._mouseHoles.set(key, hole);
     },
@@ -131,9 +136,23 @@ AFRAME.registerSystem('game', {
      * @param z
      */
     blockMouseHole(this: GameSystem, x: number, z: number) {
+        //TK: What happens to mice that have already spawned from this hole and need to hide?
+        x = x | 0; // coerce to int
+        z = z | 0; // coerce to int
         const key = `${x},${z}`;
-        this._coroutineSystem.stopCoroutine(this._coroutines.get(key) || -1);
-        this._mouseHoles.delete(key);
+        const h = this._mouseHoles.get(key);
+
+        if (h) {
+            const p = document.createElement('a-entity');
+            const pe = new VoxelEngine({metersX: 1, metersY: 1, metersZ: 1}); // Small engine for plank
+            addModelFromEncoded(plank, pe, h.rotation, new THREE.Vector3());
+            p.setObject3D('mesh', pe.getMesh());
+            p.setAttribute('position', `${h.x} 0 ${h.z}`);
+            this.el.sceneEl?.appendChild(p);
+
+            this._coroutineSystem.stopCoroutine(this._coroutines.get(key)!);
+            this._mouseHoles.delete(key);
+        }
     },
     playerPos(this: GameSystem): [number, number] {
         return this.currentPlayerPos;

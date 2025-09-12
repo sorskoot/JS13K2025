@@ -288,9 +288,10 @@ export class VoxelEngine {
     /**
      * Returns the THREE.Mesh representing the voxel world.
      * If buffers are not built yet, builds them first.
+     * @param {boolean} refresh If true, forces a rebuild of the buffers (heavy operation).
      */
-    getMesh(): Mesh {
-        if (!this._bufferSet) {
+    getMesh(refresh: boolean = false): Mesh {
+        if (!this._bufferSet || refresh) {
             this._buildBuffers();
         }
         // @ts-ignore

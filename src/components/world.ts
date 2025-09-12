@@ -4,6 +4,8 @@ import {GameSystem} from '../systems/game.js';
 import {Room} from '../types/world-types.js';
 import {door, walls} from '../models.js';
 import {rooms} from '../map.js';
+import {DataOf} from '../lib/aframe-utils.js';
+import {Component} from 'aframe';
 
 // Build a single room into the engine
 function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: number, gameSystem: GameSystem) {
@@ -126,11 +128,11 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
 
     if (room.mouseHoles) {
         for (const d of room.mouseHoles) {
-            const cx = ox + d.x;
-            const cz = oz + d.z;
             const offsetx = d.rotation === Rotation.Clockwise180 ? -1 : 0;
             const offsety = d.rotation === Rotation.Clockwise90 ? -1 : 0;
-            occ[idx(cx + offsetx, cz + offsety)] |=
+            const cx = ox + d.x + offsetx;
+            const cz = oz + d.z + offsety;
+            occ[idx(cx, cz)] |=
                 (d.rotation === Rotation.None
                     ? 4
                     : d.rotation === Rotation.Clockwise90
@@ -139,16 +141,11 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
                     ? 8
                     : 2) + 16;
             gameSystem.registerMouseHole({
-                x: cx + offsetx,
-                z: cz + offsety,
+                x: cx,
+                z: cz,
                 rotation: d.rotation,
             });
-            addModelFromEncoded(
-                walls[1],
-                engine,
-                d.rotation,
-                new THREE.Vector3(ox + d.x + offsetx, 0.125, oz + d.z + offsety)
-            );
+            addModelFromEncoded(walls[1], engine, d.rotation, new THREE.Vector3(cx, 0.125, cz));
         }
     }
 
@@ -178,26 +175,30 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
 //     maxY = Math.max(maxY, (r.origin.y ?? 0) + r.height + 1);
 //     maxZ = Math.max(maxZ, r.origin.z + r.depth + 1);
 // }
+const schema = {} as const;
 
+type WorldData = DataOf<typeof schema>;
+export type WorldComponent = Component<WorldData> & {
+    engine: VoxelEngine;
+    game: GameSystem;
+};
 AFRAME.registerComponent('world', {
-    init: function () {
+    init: function (this: WorldComponent) {
         // Create a voxel engine instance
         const metersX = 30,
             metersY = 4,
             metersZ = 30;
-        const engine = new VoxelEngine({metersX, metersY, metersZ});
-        const gameSystem = this.el.sceneEl?.systems['game'] as GameSystem;
+        this.engine = new VoxelEngine({metersX, metersY, metersZ});
+        this.game = this.el.sceneEl?.systems['game'] as GameSystem;
 
         // 2D occupancy grid (meter-resolution)
         const occ = new Uint8Array(metersX * metersZ);
-        for (const r of rooms) buildRoom(engine, r, occ, metersX, gameSystem);
-        gameSystem.setGrid(metersX, metersZ, occ);
-        //rooms.forEach((r) => r.mouseHoles?.forEach((h) => gameSystem.registerMouseHole(h)));
+        for (const r of rooms) buildRoom(this.engine, r, occ, metersX, this.game);
+        this.game.setGrid(metersX, metersZ, occ);
 
-        const voxelMesh = engine.getMesh();
+        const voxelMesh = this.engine.getMesh();
         this.el.setObject3D('mesh', voxelMesh);
-        gameSystem.worldMesh = this.el.object3D.children[0];
-        // move world slowly down to align floor with y=0
+        this.game.worldMesh = this.el.object3D.children[0];
         voxelMesh.position.set(0, -0.125, 0);
     },
 });
