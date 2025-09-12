@@ -189,14 +189,23 @@ AFRAME.registerComponent('world', {
 
         // 2D occupancy grid (meter-resolution)
         const occ = new Uint8Array(metersX * metersZ);
-        for (const r of rooms) buildRoom(this.engine, r, occ, metersX, this.game);
+        for (const r of rooms) {
+            buildRoom(this.engine, r, occ, metersX, this.game);
+            //add lamp
+            //<a-entity mixin="l" position="9.5 2.8 6.5"></a-entity>
+            // const l = document.createElement('a-entity');
+            // l.setAttribute('mixin', 'l');
+            // l.setAttribute('position', `${r.origin[0] + r.size[0] / 2} 2.8 ${r.origin[2] + r.size[1] / 2}`);
+            // this.el.sceneEl?.appendChild(l);
+        }
 
         //  place bomb
         const p = document.createElement('a-entity');
         p.setAttribute('bomb', '');
-        p.setAttribute('position', `10 0 7`);
+        p.setAttribute('position', `21 0 6`);
+        console.log('bomb placed at 21,0,6');
         this.el.sceneEl!.appendChild(p);
-        occ[7 * metersZ + 10] |= 32 | 64; // occupied and bomb
+        occ[6 * metersZ + 22] |= 32 | 64; // occupied and bomb
 
         this.game.setGrid(metersX, metersZ, occ);
 

@@ -110,14 +110,13 @@
         const floor = 0;
         const ceiling = 1;
         const walls = [2, 3, 4];
+        const furniture = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
         // Map data: two example rooms
         let data = [
             {
                 'origin': [0, 0, 5],
                 'size': [7, 9, 3],
-                'floorModel': floor,
-                'ceilingModel': ceiling,
-                'wallModel': walls[0],
+                'wallModel': 4,
                 'doors': [
                     {
                         'x': 7,
@@ -130,15 +129,18 @@
                         'rotation': 0,
                     },
                 ],
-                'mouseHoles': [],
-                'contents': [],
+                'mouseHoles': [
+                    // {'x': 7, 'z': 2, 'rotation': 2},
+                    // {'x': 0, 'z': 2, 'rotation': 0},
+                    // {'x': 2, 'z': 0, 'rotation': 3},
+                    { 'x': 4, 'z': 9, 'rotation': 1 },
+                ],
+                'contents': [{ model: furniture[0], pos: [5, 0.125, 1], rot: Rotation.Clockwise270 }],
             },
             {
                 'origin': [7, 0, 5],
                 'size': [5, 4, 3],
-                'floorModel': floor,
-                'ceilingModel': ceiling,
-                'wallModel': walls[0],
+                'wallModel': 0,
                 'doors': [
                     {
                         'x': 0,
@@ -152,9 +154,7 @@
             {
                 'origin': [0, 0, 14],
                 'size': [7, 4, 3],
-                'floorModel': floor,
-                'ceilingModel': ceiling,
-                'wallModel': walls[0],
+                'wallModel': 0,
                 'doors': [
                     {
                         'x': 1,
@@ -173,9 +173,7 @@
             {
                 'origin': [7, 0, 12],
                 'size': [5, 5, 3],
-                'floorModel': floor,
-                'ceilingModel': ceiling,
-                'wallModel': walls[0],
+                'wallModel': 0,
                 'doors': [
                     {
                         'x': 0,
@@ -194,9 +192,7 @@
             {
                 'origin': [7, 0, 9],
                 'size': [8, 3, 3],
-                'floorModel': floor,
-                'ceilingModel': ceiling,
-                'wallModel': walls[0],
+                'wallModel': 0,
                 'doors': [
                     {
                         'x': 3,
@@ -220,9 +216,7 @@
             {
                 'origin': [12, 0, 12],
                 'size': [6, 6, 3],
-                'floorModel': floor,
-                'ceilingModel': ceiling,
-                'wallModel': walls[0],
+                'wallModel': 0,
                 'doors': [
                     {
                         'x': 1,
@@ -241,9 +235,7 @@
             {
                 'origin': [12, 0, 5],
                 'size': [6, 4, 3],
-                'floorModel': floor,
-                'ceilingModel': ceiling,
-                'wallModel': walls[0],
+                'wallModel': 4,
                 'doors': [
                     {
                         'x': 1,
@@ -267,9 +259,7 @@
             {
                 'origin': [12, 0, 0],
                 'size': [5, 5, 3],
-                'floorModel': floor,
-                'ceilingModel': ceiling,
-                'wallModel': walls[0],
+                'wallModel': 0,
                 'doors': [
                     {
                         'x': 2,
@@ -283,9 +273,7 @@
             {
                 'origin': [18, 0, 4],
                 'size': [5, 5, 3],
-                'floorModel': floor,
-                'ceilingModel': ceiling,
-                'wallModel': walls[0],
+                'wallModel': 0,
                 'doors': [
                     {
                         'x': 0,
@@ -304,9 +292,7 @@
             {
                 'origin': [18, 0, 9],
                 'size': [5, 3, 3],
-                'floorModel': floor,
-                'ceilingModel': ceiling,
-                'wallModel': walls[0],
+                'wallModel': 0,
                 'doors': [
                     {
                         'x': 3,
@@ -320,9 +306,7 @@
             {
                 'origin': [18, 0, 12],
                 'size': [5, 3, 3],
-                'floorModel': floor,
-                'ceilingModel': ceiling,
-                'wallModel': walls[0],
+                'wallModel': 0,
                 'doors': [
                     {
                         'x': 0,
@@ -346,9 +330,8 @@
             function arr(a) { return `[${a.map(q).join(', ')}]`; }
             return '[\n' + rooms.map(r => {
                 const wmIdx = Array.isArray(walls) ? walls.indexOf(r.wallModel) : -1;
-                const wallExpr = wmIdx >= 0 ? `walls[${wmIdx}]` : q(r.wallModel);
-                const floorExpr = r.floorModel === floor ? 'floor' : q(r.floorModel);
-                const ceilExpr = r.ceilingModel === ceiling ? 'ceiling' : q(r.ceilingModel);
+                const wallExpr = wmIdx >= 0 ? `${wmIdx}` : q(r.wallModel);
+
 
                 const doors = Array.isArray(r.doors) ? r.doors.map(d => `{
         'x': ${q(d.x)},
@@ -361,15 +344,13 @@
                         'rotation': ${q(m.rotation)},
                     }`).join(',\n    ') : '';
                 const contents = Array.isArray(r.contents) ? r.contents.map(c => `{
-                        'model': ${q(c.model)},
+                        'model': furniture[${q(c.model)}],
                         'pos': ${arr(c.pos || [])},
                     }`).join(',\n    ') : '';
 
                 return `  {
     'origin': ${arr(r.origin || [0, 0, 0])},
     'size': ${arr(r.size || [1, 1, 1])},
-    'floorModel': ${floorExpr},
-    'ceilingModel': ${ceilExpr},
     'wallModel': ${wallExpr},
     'doors': [${doors ? `\n    ${doors}\n    ` : ''}],
     'mouseHoles': [${mouseHoles ? `\n    ${mouseHoles}\n    ` : ''}],
@@ -502,6 +483,11 @@
                 // floor
                 ctx.fillStyle = '#2b6b2b'; // greenish floor
                 ctx.fillRect(gx(ox), gz(oz), sx * cellSize, sz * cellSize);
+                for (let j = 0; j < r.contents.length; j++) {
+                    const f = r.contents[j];
+                    ctx.fillStyle = f.pos[1] < 1 ? '#811' : '#118'; // red for blocking, blue for non-blocking
+                    ctx.fillRect(gx(f.pos[0] + ox) + 5, gz(f.pos[2] + oz) + 5, cellSize - 10, cellSize - 10);
+                }
 
                 // walls - draw as filled rectangles on perimeter
                 ctx.fillStyle = '#444';
@@ -572,35 +558,35 @@
                         const m = r.mouseHoles[mi];
                         const mx = ox + (m.x || 0);
                         const mz = oz + (m.z || 0);
-                        // default center inside the cell
-                        let px = gx(mx) + cellSize / 2;
-                        let py = gz(mz) + cellSize / 2;
+                        // // default center inside the cell
+                        let px = gx(mx) - cellSize / 2;
+                        let py = gz(mz) - cellSize / 2;
                         const radius = Math.max(3, Math.floor(cellSize * 0.18));
 
-                        // detect perimeter side and move the hole slightly INTO the room (not punched through)
-                        let onWall = false;
-                        const inset = Math.max(4, Math.floor(radius * .5)); // distance from wall into room
-                        if (mz === oz) {
-                            // north wall: place just inside the northern cell
-                            py = gz(mz) + inset;
-                            px = gx(mx) + cellSize / 2;
-                            onWall = true;
-                        } else if (mz === oz + sz) {
-                            // south wall: place just inside the southern cell
-                            py = gz(mz) + cellSize - inset;
-                            px = gx(mx) + cellSize / 2;
-                            onWall = true;
-                        } else if (mx === ox) {
-                            // west wall: place just inside the western cell
-                            px = gx(mx) + inset;
-                            py = gz(mz) + cellSize / 2;
-                            onWall = true;
-                        } else if (mx === ox + sx) {
-                            // east wall: place just inside the eastern cell
-                            px = gx(mx) + cellSize - inset;
-                            py = gz(mz) + cellSize / 2;
-                            onWall = true;
-                        }
+                        // // detect perimeter side and move the hole slightly INTO the room (not punched through)
+                        // let onWall = false;
+                        // const inset = Math.max(4, Math.floor(radius * .5)); // distance from wall into room
+                        // if (mz === oz) {
+                        //     // north wall: place just inside the northern cell
+                        //     py = gz(mz) + inset;
+                        //     px = gx(mx) + cellSize / 2;
+                        //     onWall = true;
+                        // } else if (mz === oz + sz) {
+                        //     // south wall: place just inside the southern cell
+                        //     py = gz(mz) + cellSize - inset;
+                        //     px = gx(mx) + cellSize / 2;
+                        //     onWall = true;
+                        // } else if (mx === ox) {
+                        //     // west wall: place just inside the western cell
+                        //     px = gx(mx) + inset;
+                        //     py = gz(mz) + cellSize / 2;
+                        //     onWall = true;
+                        // } else if (mx === ox + sx) {
+                        //     // east wall: place just inside the eastern cell
+                        //     px = gx(mx) + cellSize - inset;
+                        //     py = gz(mz) + cellSize / 2;
+                        //     onWall = true;
+                        // }
 
                         // Draw visible hole against the wall: dark center + highlight stroke
                         ctx.beginPath();
@@ -609,10 +595,10 @@
                         ctx.fill();
 
                         // subtle inner shadow to suggest depth
-                        ctx.beginPath();
-                        ctx.arc(px - Math.sign(px - (gx(mx) + cellSize / 2)) * 1, py - Math.sign(py - (gz(mz) + cellSize / 2)) * 1, Math.max(1, radius - 2), 0, Math.PI * 2);
-                        ctx.fillStyle = 'rgba(0,0,0,0.35)';
-                        ctx.fill();
+                        // ctx.beginPath();
+                        // ctx.arc(px - Math.sign(px - (gx(mx) + cellSize / 2)) * 1, py - Math.sign(py - (gz(mz) + cellSize / 2)) * 1, Math.max(1, radius - 2), 0, Math.PI * 2);
+                        // ctx.fillStyle = 'rgba(0,0,0,0.35)';
+                        // ctx.fill();
 
                         ctx.strokeStyle = '#ffd86b';
                         ctx.lineWidth = 1;

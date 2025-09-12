@@ -15,7 +15,7 @@
         <a-assets>
             <a-mixin id="ms" shadow="receive: true" mouse scale="0.4 0.4 0.4"></a-mixin>
             <a-mixin id="l"
-                light="angle: 75; color: #888; type: spot; castShadow: true; shadowCameraFar: 25" " rotation=" -90 0
+                light="angle: 75; color: #888; type: spot; castShadow: false; shadowCameraFar: 25" " rotation=" -90 0
                 0"></a-mixin>
         </a-assets>
         <a-sky color="#000"></a-sky>
@@ -23,10 +23,9 @@
         <a-entity>
             <a-entity light="color: #223; type: ambient"></a-entity>
             <!-- <a-entity light="color: #888; castShadow: true; shadowCameraFar: 100" position="0.6 3.0 2.0"></a-entity> -->
-            <a-entity mixin="l" position="3.5 2.8 10"></a-entity>
-            <a-entity mixin="l" position="9.5 2.8 6.5"></a-entity>
+            <!-- <a-entity mixin="l" position="3.5 2.8 10"></a-entity>
+            <a-entity mixin="l" position="9.5 2.8 6.5"></a-entity> -->
             <a-entity class="r" shadow="receive: true" world></a-entity>
-            <a-entity class="r" shadow="receive: true" bomb></a-entity>
 
             <a-entity id="rig" head-offset position="5 0 10">
                 <a-entity id="camera" wasd-controls look-controls camera position="0 1.7 0"></a-entity>
