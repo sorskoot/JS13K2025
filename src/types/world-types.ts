@@ -39,3 +39,13 @@ export interface InteractEvent {
         z: number;
     };
 }
+export interface StateChangeEvent {
+    newState: GameState;
+}
+
+export enum GameState {
+    Title,
+    Playing,
+    GameOver,
+    Win,
+}

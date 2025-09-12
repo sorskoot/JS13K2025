@@ -19,26 +19,33 @@ Must Have:
         ✔ Attacking Mice @done(25-09-11 15:26)
         ✔ Hiding Mice @done(25-09-11 15:26)
     Cheese-bomb:
-        ☐ Explodes 10 mintes after the game starts
+        ✔ Explodes 10 mintes after the game starts @done(25-09-12 17:41)
     Win state:
-        ☐ touch the cheese-bomb for 5 seconds
+        ✔ touch the cheese-bomb @done(25-09-12 17:41)
     Lose state:
         ☐ Run out of lives (9)
-        ☐ Run out of time (10 minutes)
-    ☐ Bites. When a mouse bites you, you lose a life. After biting the mouse runs away.
+        ✔ Run out of time (10 minutes) @done(25-09-12 17:41)
+    ☐ Bites. When a mouse bites you, you lose a life.
+        ✔ After biting the mouse runs away. @done(25-09-12 17:42)
     ✔ Shoot Mice @done(25-09-11 22:32)
-    ☐ Block Mouseholes
+    ✔ Block Mouseholes @done(25-09-12 15:24)
     Level:
+        ☐ Finish the level design - Add mouse holes
         ✔ Better way to generate levels @done(25-09-06 21:50)
         ✔ Design a level @done(25-09-10 15:35)
         ✔ Spawning mice at holes @done(25-09-10 15:35)
         ✔ Colliding with walls need to be beter. @done(25-09-12 00:25)
             ~ Right now you stay too far off the walls
     ☐ A global function that returns the room number based on position.
+        ☐ Activate mouseholes in adjacent rooms based on this.
 
 Should Have:
+    ☐ Add furniture
+    ☐ Touch the bomb for 5 seconds to win
+    ☐ Be able to restart the game without refresh
     ☐ Crappy audio (is better then no audio)
     ☐ Red flash when bitten (make a red light)
+    ☐ Show amount of lives left
 
 Could Have:
     ☐ post processing effects (SSAO, Bloom)

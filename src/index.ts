@@ -8,6 +8,7 @@ import './components/self-destruct.js';
 import './components/head-offset.js';
 import './components/particles.js';
 import './components/interact.js';
+import './components/bomb.js';
 
 import './systems/game.js';
 import './systems/coroutine.js';

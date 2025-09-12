@@ -2,10 +2,11 @@ import {VoxelEngine} from '../lib/voxelengine.js';
 import {addModelFromEncoded, Rotation} from '../lib/encoder.js';
 import {GameSystem} from '../systems/game.js';
 import {Room} from '../types/world-types.js';
-import {door, walls} from '../models.js';
+import {bomb, door, walls} from '../models.js';
 import {rooms} from '../map.js';
 import {DataOf} from '../lib/aframe-utils.js';
 import {Component} from 'aframe';
+import {BombComponent} from './bomb.js';
 
 // Build a single room into the engine
 function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: number, gameSystem: GameSystem) {
@@ -194,11 +195,20 @@ AFRAME.registerComponent('world', {
         // 2D occupancy grid (meter-resolution)
         const occ = new Uint8Array(metersX * metersZ);
         for (const r of rooms) buildRoom(this.engine, r, occ, metersX, this.game);
+
+        //  place bomb
+        const p = document.createElement('a-entity');
+        p.setAttribute('bomb', '');
+        p.setAttribute('position', `10 0 7`);
+        this.el.sceneEl!.appendChild(p);
+        occ[7 * metersZ + 10] |= 32 | 64; // occupied and bomb
+
         this.game.setGrid(metersX, metersZ, occ);
 
         const voxelMesh = this.engine.getMesh();
         this.el.setObject3D('mesh', voxelMesh);
         this.game.worldMesh = this.el.object3D.children[0];
+        this.game.bomb = p.components['bomb'] as BombComponent;
         voxelMesh.position.set(0, -0.125, 0);
     },
 });

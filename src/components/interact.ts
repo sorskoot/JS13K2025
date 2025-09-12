@@ -9,6 +9,7 @@ const schema = {
 type InteractData = DataOf<typeof schema>;
 type InteractComponent = Component<InteractData> & {
     _buttonDown: (event: Event) => void;
+    _buttonUp: (event: Event) => void;
 };
 const pos = new THREE.Vector3();
 AFRAME.registerComponent('interact', {
@@ -23,11 +24,18 @@ AFRAME.registerComponent('interact', {
                 pos: pos.clone(),
             });
         };
+        this._buttonUp = (event: Event) => {
+            const buttonEvent = event as CustomEvent<ButtonEvent>;
+            if (buttonEvent.detail.id !== 0) return; // only respond to trigger button
+            this.el.sceneEl!.emit('interactEnd');
+        };
     },
     play: function (this: InteractComponent) {
         this.el.addEventListener('buttondown', this._buttonDown);
+        this.el.addEventListener('buttonup', this._buttonUp);
     },
     pause: function (this: InteractComponent) {
         this.el.removeEventListener('buttondown', this._buttonDown);
+        this.el.removeEventListener('buttonup', this._buttonUp);
     },
 });

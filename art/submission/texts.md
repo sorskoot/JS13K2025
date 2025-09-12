@@ -4,6 +4,8 @@
 - CAT = Cybernatically Altered Trooper
 - Special covert forces
 - Fighting terrorist mice that planted a bomb
+- You have 10 minutes to find and disarm the bomb by interacting with it for 5 seconds (left controller)
+- You have 9 lives. Every time a mouse gets you, you loose 1
 
 Black Ops:
 > Covert and Unacknowledged: These operations are carried out in secret and are often not officially recorded or admitted by the government or organization that authorized them2.

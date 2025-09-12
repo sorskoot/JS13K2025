@@ -1,11 +1,12 @@
 import {System} from 'aframe';
 import {DataOf} from '../lib/aframe-utils.js';
 import {addModelFromEncoded} from '../lib/encoder.js';
-import {HoleSpec, InteractEvent} from '../types/world-types.js';
+import {GameState, HoleSpec, InteractEvent} from '../types/world-types.js';
 import {Coroutine, CoroutineSystem, waitForSeconds} from './coroutine.js';
 import {Intersection, Object3D, Vector3} from 'three';
 import {VoxelEngine} from '../lib/voxelengine.js';
 import {plank} from '../models.js';
+import {BombComponent} from '../components/bomb.js';
 
 declare const DEBUG: boolean;
 const schema = {} as const;
@@ -32,31 +33,56 @@ export type GameSystem = System<GameData> & {
      */
     rayCastD(this: GameSystem, from: Vector3, to: Vector3): Intersection | null;
     removeMouse: (mouse: Object3D) => void;
+    currentPlayerPos: [number, number];
+    worldMesh?: Object3D;
+    bomb?: BombComponent;
+    boom: () => void;
+    gameState: GameState;
+    changeGameState: (newState: GameState) => void;
+    gameOver: () => void;
     _mouseHoles: Map<string, HoleSpec>;
     _coroutines: Map<string, number>;
     _coroutineSystem: CoroutineSystem;
     _activateMouseHole: (hole: HoleSpec) => boolean;
     _spawnMouseAt: (hole: HoleSpec) => Generator<any, void, unknown>;
     _getPlayerPosition: () => [number, number];
-    currentPlayerPos: [number, number];
-    worldMesh?: Object3D;
     _objs: Object3D[];
 };
 
 AFRAME.registerSystem('game', {
     schema,
     init(this: GameSystem) {
+        this.gameState = GameState.Title;
+
         this._mouseHoles = new Map();
         this._coroutines = new Map();
         this._objs = [];
         this._coroutineSystem = this.el.sceneEl!.systems['coroutine'] as CoroutineSystem;
 
+        this.el.sceneEl!.addEventListener('enter-vr', () => {
+            this.changeGameState(GameState.Playing);
+        });
+
         this.el.sceneEl!.addEventListener('interact', (event: Event) => {
             const detail = (event as CustomEvent<InteractEvent>).detail;
-            this.blockMouseHole(detail.pos.x, detail.pos.z);
+            if (this.grid.occ[(detail.pos.x | 0) + (detail.pos.z | 0) * this.grid.w] & 64) {
+                // touching the bomb
+                // Game Win!
+                if (this.bomb) {
+                    this.bomb.el.setAttribute('visible', 'false');
+                    this.gameState = GameState.Win;
+                }
+            } else {
+                this.blockMouseHole(detail.pos.x, detail.pos.z);
+            }
         });
+        this.el.sceneEl!.addEventListener('interactEnd', (event: Event) => {});
     },
     tick: function (this: GameSystem, time: number, timeDelta: number) {
+        if (this.gameState !== GameState.Playing) {
+            return;
+        }
+
         // update mouse holes and spawn mice as needed
         this._mouseHoles.forEach((hole) => {
             if (hole.active) return;
@@ -86,7 +112,25 @@ AFRAME.registerSystem('game', {
         const direction = to.clone().sub(from).normalize();
         return this.rayCastD(from, direction);
     },
+    changeGameState(this: GameSystem, newState: GameState) {
+        this.gameState = newState;
+        this.el.sceneEl!.emit('gamestatechange', {newState});
+    },
+    boom(this: GameSystem) {
+        console.log('BOOM! Game Over!');
+        this.gameOver();
+    },
+    gameOver(this: GameSystem) {
+        this.changeGameState(GameState.GameOver);
 
+        this._coroutines.forEach((id) => {
+            this._coroutineSystem.stopCoroutine(id);
+        });
+        const m = document.getElementsByClassName('m');
+        for (let i = 0; i < m.length; i++) {
+            m[i].remove();
+        }
+    },
     setGrid(this: GameSystem, w: number, d: number, occ: Uint8Array) {
         this.grid = {w, d, occ};
         if (DEBUG) {
@@ -148,6 +192,7 @@ AFRAME.registerSystem('game', {
             addModelFromEncoded(plank, pe, h.rotation, new THREE.Vector3());
             p.setObject3D('mesh', pe.getMesh());
             p.setAttribute('position', `${h.x} 0 ${h.z}`);
+            p.classList.add('b'); // mark as board
             this.el.sceneEl?.appendChild(p);
 
             this._coroutineSystem.stopCoroutine(this._coroutines.get(key)!);

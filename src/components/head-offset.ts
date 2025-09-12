@@ -9,7 +9,6 @@ const schema = {
 type HeadOffsetData = DataOf<typeof schema>;
 type HeadOffsetComponent = Component<HeadOffsetData> & {
     _originalPosition: {x: number; y: number; z: number};
-    _onEnterVR: () => void;
     _tries: number;
     _maxTries: number;
     _adjusting: boolean;
