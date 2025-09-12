@@ -193,7 +193,7 @@ AFRAME.registerComponent('mouse', {
                 const dist = Math.sqrt(dirX * dirX + dirZ * dirZ);
                 //TODO: Might go back to wander if distance is too big.
                 if (dist < this.data.ar) {
-                    console.log('Caught you!');
+                    this._game.bite();
                     state = State.hide;
                     continue;
                 }

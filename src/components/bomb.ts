@@ -41,10 +41,22 @@ AFRAME.registerComponent('bomb', {
         );
     },
     _countDown: function* (this: BombComponent) {
+        const game = this.el.sceneEl!.systems.game as GameSystem;
+        game.notify('Bomb activated!\nYou have 10 minutes to defuse it!');
         // wait for 10 minutes
-        yield* waitForSeconds(600);
+        yield* waitForSeconds(300); // 5 minutes
+        game.notify('5 minutes remaining!');
+        yield* waitForSeconds(120); // 2 minutes
+        game.notify('3 minutes remaining!');
+        yield* waitForSeconds(120);
+        game.notify('1 minutes remaining!');
+        yield* waitForSeconds(30);
+        game.notify('30 seconds remaining!');
+        yield* waitForSeconds(20);
+        game.notify('10 seconds remaining!');
+        yield* waitForSeconds(10);
         // tell game system the bomb has exploded
-        (this.el.sceneEl!.systems.game as GameSystem).boom();
+        game.boom();
 
         // Do something dramatic here
     },

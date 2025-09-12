@@ -43,6 +43,7 @@ export type GameSystem = System<GameData> & {
     gameOver: () => void;
     addLamp: (lamp: Entity) => void;
     updateLamps: () => void;
+    bite: () => void;
     _lamps: Entity[];
     _mouseHoles: Map<string, HoleSpec>;
     _coroutines: Map<string, number>;
@@ -51,20 +52,27 @@ export type GameSystem = System<GameData> & {
     _spawnMouseAt: (hole: HoleSpec) => Generator<any, void, unknown>;
     _getPlayerPosition: () => [number, number];
     _objs: Object3D[];
+    _lives: number;
     currentRoom: number;
+    notify: (message: string) => void;
+    notifyCR: (message: string) => Generator<any, void, unknown>;
+    notifyCRID?: number;
+    text: Entity;
 };
 
 AFRAME.registerSystem('game', {
     schema,
     init(this: GameSystem) {
         this.gameState = GameState.Title;
-
+        this._lives = 9;
         this._mouseHoles = new Map();
         this._coroutines = new Map();
         this._objs = [];
         this._lamps = [];
         this._coroutineSystem = this.el.sceneEl!.systems['coroutine'] as CoroutineSystem;
         this.currentRoom = -1;
+        this.text = this.el.sceneEl!.querySelector('#t')!;
+        this.text.setAttribute('visible', 'false');
         this.el.sceneEl!.addEventListener('enter-vr', () => {
             this.changeGameState(GameState.Playing);
         });
@@ -84,6 +92,27 @@ AFRAME.registerSystem('game', {
         });
         this.el.sceneEl!.addEventListener('interactEnd', (event: Event) => {});
     },
+    notify(this: GameSystem, message: string) {
+        if (this.notifyCRID) {
+            this._coroutineSystem.stopCoroutine(this.notifyCRID);
+        }
+        this.notifyCRID = this._coroutineSystem.addCoroutine(new Coroutine(this.notifyCR(message)));
+    },
+    bite(this: GameSystem) {
+        this._lives--;
+        if (this._lives <= 0) {
+            this.gameOver();
+        } else {
+            // Maybe flash the screen red or something
+            this.notify(`Ouch! You have ${this._lives} lives left.`);
+        }
+    },
+    notifyCR: function* (this: GameSystem, message: string) {
+        this.text.setAttribute('text', 'value', message);
+        this.text.setAttribute('visible', 'true');
+        yield* waitForSeconds(3);
+        this.text.setAttribute('visible', 'false');
+    },
     updateLamps(this: GameSystem) {
         for (let i = 0; i < this._lamps.length; i++) {
             if (i === this.currentRoom || neighbors[this.currentRoom]?.includes(i)) {
@@ -93,6 +122,7 @@ AFRAME.registerSystem('game', {
             }
         }
     },
+
     tick: function (this: GameSystem, time: number, timeDelta: number) {
         if (this.gameState !== GameState.Playing) {
             return;

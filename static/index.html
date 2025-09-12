@@ -19,7 +19,7 @@
                 -90 0 0"></a-mixin>
         </a-assets>
         <a-sky color="#000"></a-sky>
-        <a-entity text="value: Hello World;"></a-entity>
+
         <a-entity>
             <a-entity light="color: #223; type: ambient"></a-entity>
             <!-- <a-entity light="color: #888; castShadow: true; shadowCameraFar: 100" position="0.6 3.0 2.0"></a-entity> -->
@@ -28,7 +28,10 @@
             <a-entity class="r" shadow="receive: true" world></a-entity>
 
             <a-entity id="rig" head-offset position="5 0 10">
-                <a-entity id="camera" wasd-controls look-controls camera position="0 1.7 0"></a-entity>
+                <a-entity id="camera" wasd-controls look-controls camera position="0 1.7 0">
+                    <a-entity id="t" text="value: Hello World; align: center; color: #AAA"
+                        position="0 -.1 -.5"></a-entity>
+                </a-entity>
                 <a-entity interact smooth-locomotion oculus-touch-controls="hand:left;model:false">
                     <a-entity paw="" scale="0.1 0.1 0.1" rotation="0 180 0" position="0.05 0 0.1"> </a-entity>
                 </a-entity>
