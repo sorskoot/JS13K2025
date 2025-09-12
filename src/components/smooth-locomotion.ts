@@ -2,6 +2,7 @@ import type {Component} from 'aframe';
 import type {DataOf} from '../lib/aframe-utils.js';
 import {Vector3} from 'three';
 import {GameSystem, NavGrid} from '../systems/game.js';
+import {GameState} from '../types/world-types.js';
 
 const schema = {
     speed: {type: 'number', default: 0.005},
@@ -38,6 +39,13 @@ AFRAME.registerComponent('smooth-locomotion', {
             this._velocity.z = axis[3] * s;
             this._velocity.x = axis[2] * s;
         };
+
+        this.el.sceneEl!.addEventListener('gamestatechange', (event) => {
+            const detail = (event as CustomEvent).detail;
+            if (detail.newState === GameState.GameOver || detail.newState === GameState.Win) {
+                this.el.removeEventListener('axismove', this._axisMoveHandler);
+            }
+        });
     },
     play: function (this: SmoothLocomotionComponent) {
         this.el.addEventListener('axismove', this._axisMoveHandler);

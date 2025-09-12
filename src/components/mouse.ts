@@ -5,6 +5,7 @@ import {VoxelEngine} from '../lib/voxelengine.js';
 import {Coroutine, CoroutineSystem, waitForSeconds} from '../systems/coroutine.js';
 import {BufferGeometry, Vector3} from 'three';
 import {GameSystem} from '../systems/game.js';
+import {GameState} from '../types/world-types.js';
 
 const schema = {
     /**
@@ -105,6 +106,13 @@ AFRAME.registerComponent('mouse', {
         this._coroutineId = (this.el.sceneEl!.systems.coroutine as CoroutineSystem).addCoroutine(
             new Coroutine(this.ai())
         );
+        this.el.sceneEl!.addEventListener('gamestatechange', (event) => {
+            const detail = (event as CustomEvent).detail;
+            if (detail.newState === GameState.GameOver || detail.newState === GameState.Win) {
+                (this.el.sceneEl!.systems.coroutine as CoroutineSystem).stopCoroutine(this._coroutineId!);
+                this._die();
+            }
+        });
     },
     tick: function (this: MouseComponent, time: number, timeDelta: number) {
         if (this._moveTo) {

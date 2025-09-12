@@ -74,6 +74,7 @@ AFRAME.registerSystem('game', {
         this.text = this.el.sceneEl!.querySelector('#t')!;
         this.text.setAttribute('visible', 'false');
         this.el.sceneEl!.addEventListener('enter-vr', () => {
+            this.el.sceneEl!.querySelector('#title')!.setAttribute('visible', 'false');
             this.changeGameState(GameState.Playing);
         });
 
@@ -82,9 +83,17 @@ AFRAME.registerSystem('game', {
             if (this.grid.occ[(detail.pos.x | 0) + (detail.pos.z | 0) * this.grid.w] & 64) {
                 // touching the bomb
                 // Game Win!
+                this.el.sceneEl!.querySelector('#win')!.setAttribute('visible', 'true');
                 if (this.bomb) {
                     this.bomb.el.setAttribute('visible', 'false');
                     this.changeGameState(GameState.Win);
+                    this._coroutines.forEach((id) => {
+                        this._coroutineSystem.stopCoroutine(id);
+                    });
+                    const m = document.getElementsByClassName('m');
+                    for (let i = 0; i < m.length; i++) {
+                        m[i].remove();
+                    }
                 }
             } else {
                 this.blockMouseHole(detail.pos.x, detail.pos.z);
@@ -196,12 +205,12 @@ AFRAME.registerSystem('game', {
         this.el.sceneEl!.emit('gamestatechange', {newState});
     },
     boom(this: GameSystem) {
-        console.log('BOOM! Game Over!');
         this.gameOver();
     },
     gameOver(this: GameSystem) {
         this.changeGameState(GameState.GameOver);
 
+        this.el.sceneEl!.querySelector('#go')!.setAttribute('visible', 'true');
         this._coroutines.forEach((id) => {
             this._coroutineSystem.stopCoroutine(id);
         });

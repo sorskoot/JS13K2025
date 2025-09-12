@@ -207,7 +207,6 @@ AFRAME.registerComponent('world', {
         const p = document.createElement('a-entity');
         p.setAttribute('bomb', '');
         p.setAttribute('position', `21 0 6`);
-        console.log('bomb placed at 21,0,6');
         this.el.sceneEl!.appendChild(p);
         occ[6 * metersZ + 21] |= 32 | 64; // occupied and bomb
 
