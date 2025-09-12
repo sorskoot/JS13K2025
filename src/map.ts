@@ -2,6 +2,9 @@ import {Rotation} from './lib/encoder.js';
 import {bomb, ceiling, chair, floor, walls, furniture} from './models.js';
 import {Room} from './types/world-types.js';
 
+// how rooms are connected: index into rooms array, each entry is an array of neighbor room indices
+export const neighbors = [[1, 2], [0], [0, 3], [2, 4], [3, 5, 6], [4, 10], [4, 7, 8], [6], [6, 9], [8], [5]];
+
 // Example rooms array that recreates your current layout
 export const rooms: Room[] = [
     {
@@ -124,7 +127,7 @@ export const rooms: Room[] = [
         'mouseHoles': [
             {
                 'x': 0,
-                'z': 3,
+                'z': 2,
                 'rotation': 0,
             },
         ],

@@ -15,6 +15,7 @@ export type HoleSpec = {
     rotation: Rotation;
     spawnRate?: number; // mice per minute, default 1
     active?: boolean; // if false, no mice will spawn
+    roomid?: number; // index of room in rooms array
 };
 
 export type Room = {

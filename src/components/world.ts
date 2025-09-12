@@ -140,6 +140,7 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
                 x: cx,
                 z: cz,
                 rotation: d.rotation,
+                roomid: rooms.indexOf(room),
             });
             addModelFromEncoded(walls[room.wallModel + 1], engine, d.rotation, new THREE.Vector3(cx, 0.125, cz));
         }
@@ -189,14 +190,17 @@ AFRAME.registerComponent('world', {
 
         // 2D occupancy grid (meter-resolution)
         const occ = new Uint8Array(metersX * metersZ);
+
         for (const r of rooms) {
             buildRoom(this.engine, r, occ, metersX, this.game);
             //add lamp
             //<a-entity mixin="l" position="9.5 2.8 6.5"></a-entity>
-            // const l = document.createElement('a-entity');
-            // l.setAttribute('mixin', 'l');
-            // l.setAttribute('position', `${r.origin[0] + r.size[0] / 2} 2.8 ${r.origin[2] + r.size[1] / 2}`);
-            // this.el.sceneEl?.appendChild(l);
+            const l = document.createElement('a-entity');
+            l.setAttribute('mixin', 'l');
+            l.setAttribute('position', `${r.origin[0] + r.size[0] / 2} 2.8 ${r.origin[2] + r.size[1] / 2}`);
+            l.setAttribute('visible', 'false');
+            this.game.addLamp(l);
+            this.el.sceneEl?.appendChild(l);
         }
 
         //  place bomb
@@ -205,7 +209,7 @@ AFRAME.registerComponent('world', {
         p.setAttribute('position', `21 0 6`);
         console.log('bomb placed at 21,0,6');
         this.el.sceneEl!.appendChild(p);
-        occ[6 * metersZ + 22] |= 32 | 64; // occupied and bomb
+        occ[6 * metersZ + 21] |= 32 | 64; // occupied and bomb
 
         this.game.setGrid(metersX, metersZ, occ);
 

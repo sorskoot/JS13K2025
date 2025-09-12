@@ -1,4 +1,4 @@
-import {System} from 'aframe';
+import {Entity, System} from 'aframe';
 import {DataOf} from '../lib/aframe-utils.js';
 import {addModelFromEncoded} from '../lib/encoder.js';
 import {GameState, HoleSpec, InteractEvent} from '../types/world-types.js';
@@ -7,6 +7,7 @@ import {Intersection, Object3D, Vector3} from 'three';
 import {VoxelEngine} from '../lib/voxelengine.js';
 import {plank} from '../models.js';
 import {BombComponent} from '../components/bomb.js';
+import {neighbors, rooms} from '../map.js';
 
 declare const DEBUG: boolean;
 const schema = {} as const;
@@ -40,6 +41,9 @@ export type GameSystem = System<GameData> & {
     gameState: GameState;
     changeGameState: (newState: GameState) => void;
     gameOver: () => void;
+    addLamp: (lamp: Entity) => void;
+    updateLamps: () => void;
+    _lamps: Entity[];
     _mouseHoles: Map<string, HoleSpec>;
     _coroutines: Map<string, number>;
     _coroutineSystem: CoroutineSystem;
@@ -47,6 +51,7 @@ export type GameSystem = System<GameData> & {
     _spawnMouseAt: (hole: HoleSpec) => Generator<any, void, unknown>;
     _getPlayerPosition: () => [number, number];
     _objs: Object3D[];
+    currentRoom: number;
 };
 
 AFRAME.registerSystem('game', {
@@ -57,8 +62,9 @@ AFRAME.registerSystem('game', {
         this._mouseHoles = new Map();
         this._coroutines = new Map();
         this._objs = [];
+        this._lamps = [];
         this._coroutineSystem = this.el.sceneEl!.systems['coroutine'] as CoroutineSystem;
-
+        this.currentRoom = -1;
         this.el.sceneEl!.addEventListener('enter-vr', () => {
             this.changeGameState(GameState.Playing);
         });
@@ -70,7 +76,7 @@ AFRAME.registerSystem('game', {
                 // Game Win!
                 if (this.bomb) {
                     this.bomb.el.setAttribute('visible', 'false');
-                    this.gameState = GameState.Win;
+                    this.changeGameState(GameState.Win);
                 }
             } else {
                 this.blockMouseHole(detail.pos.x, detail.pos.z);
@@ -78,21 +84,64 @@ AFRAME.registerSystem('game', {
         });
         this.el.sceneEl!.addEventListener('interactEnd', (event: Event) => {});
     },
+    updateLamps(this: GameSystem) {
+        for (let i = 0; i < this._lamps.length; i++) {
+            if (i === this.currentRoom || neighbors[this.currentRoom]?.includes(i)) {
+                this._lamps[i].setAttribute('visible', 'true');
+            } else {
+                this._lamps[i].setAttribute('visible', 'false');
+            }
+        }
+    },
     tick: function (this: GameSystem, time: number, timeDelta: number) {
         if (this.gameState !== GameState.Playing) {
             return;
         }
 
         // update mouse holes and spawn mice as needed
-        this._mouseHoles.forEach((hole) => {
-            if (hole.active) return;
-            hole.active = this._activateMouseHole(hole);
-        });
+        // this._mouseHoles.forEach((hole) => {
+        //     if (hole.active) return;
+        //     hole.active = this._activateMouseHole(hole);
+        // });
         this.currentPlayerPos = this._getPlayerPosition();
+
+        // check what room the player is in
+        let [px, pz] = this.currentPlayerPos;
+        px = px | 0;
+        pz = pz | 0;
+        rooms.forEach((r, i) => {
+            if (
+                px >= r.origin[0] &&
+                px < r.origin[0] + r.size[0] &&
+                pz >= r.origin[2] &&
+                pz < r.origin[2] + r.size[1]
+            ) {
+                if (this.currentRoom !== i) {
+                    this.currentRoom = i;
+                    this.updateLamps();
+
+                    this._mouseHoles.forEach((hole) => {
+                        if (hole.roomid === i) {
+                            if (!hole.active) {
+                                hole.active = this._activateMouseHole(hole);
+                            }
+                        } else {
+                            hole.active = false;
+                            const key = `${hole.x},${hole.z}`;
+                            this._coroutineSystem.stopCoroutine(this._coroutines.get(key)!);
+                            this._coroutines.delete(key);
+                        }
+                    });
+                }
+            }
+        });
     },
     isEmpty(this: GameSystem, x: number, z: number): boolean {
         const g = this.grid;
         return x >= 0 && z >= 0 && x < g.w && z < g.d && g.occ[z * g.w + x] === 0;
+    },
+    addLamp(this: GameSystem, lamp: Entity) {
+        this._lamps.push(lamp);
     },
     rayCastD(this: GameSystem, from: Vector3, dir: Vector3): Intersection | null {
         // Create raycaster (one-off, not continuous)
@@ -219,8 +268,7 @@ AFRAME.registerSystem('game', {
         }
     },
     _spawnMouseAt: function* (this: GameSystem, hole: HoleSpec) {
-        // wait a random time up to 10 seconds before first spawn so not all mice appear at once
-        yield* waitForSeconds(Math.random() * 10);
+        yield* waitForSeconds(Math.random() * 2);
         while (true) {
             // spawn mice at the set interval until the hole is blocked
             const mouseEl = document.createElement('a-entity');
@@ -231,7 +279,7 @@ AFRAME.registerSystem('game', {
             mouseEl.setAttribute('position', {x: hole.x + 0.5, y: 0, z: hole.z + 0.5});
             this.el.sceneEl?.appendChild(mouseEl);
             this._objs.push(mouseEl.object3D);
-            yield* waitForSeconds(hole.spawnRate || 15);
+            yield* waitForSeconds(hole.spawnRate || 8);
         }
     },
 });
