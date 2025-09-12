@@ -1,5 +1,5 @@
 import {Rotation} from './lib/encoder.js';
-import {bomb, ceiling, chair, floor, walls} from './models.js';
+import {bomb, ceiling, chair, floor, walls, furniture} from './models.js';
 import {Room} from './types/world-types.js';
 
 // Example rooms array that recreates your current layout
@@ -7,9 +7,7 @@ export const rooms: Room[] = [
     {
         'origin': [0, 0, 5],
         'size': [7, 9, 3],
-        'floorModel': floor,
-        'ceilingModel': ceiling,
-        'wallModel': walls[0],
+        'wallModel': 4,
         'doors': [
             {
                 'x': 7,
@@ -28,14 +26,12 @@ export const rooms: Room[] = [
             // {'x': 2, 'z': 0, 'rotation': 3},
             {'x': 4, 'z': 9, 'rotation': 1},
         ],
-        'contents': [{model: chair, pos: [2, 0.125, 4]}],
+        'contents': [{model: furniture[14], pos: [5, 0.125, 1], rot: Rotation.Clockwise270}],
     },
     {
         'origin': [7, 0, 5],
         'size': [5, 4, 3],
-        'floorModel': floor,
-        'ceilingModel': ceiling,
-        'wallModel': walls[0],
+        'wallModel': 0,
         'doors': [
             {
                 'x': 0,
@@ -49,9 +45,7 @@ export const rooms: Room[] = [
     {
         'origin': [0, 0, 14],
         'size': [7, 4, 3],
-        'floorModel': floor,
-        'ceilingModel': ceiling,
-        'wallModel': walls[0],
+        'wallModel': 0,
         'doors': [
             {
                 'x': 1,
@@ -70,9 +64,7 @@ export const rooms: Room[] = [
     {
         'origin': [7, 0, 12],
         'size': [5, 5, 3],
-        'floorModel': floor,
-        'ceilingModel': ceiling,
-        'wallModel': walls[0],
+        'wallModel': 0,
         'doors': [
             {
                 'x': 0,
@@ -91,9 +83,7 @@ export const rooms: Room[] = [
     {
         'origin': [7, 0, 9],
         'size': [8, 3, 3],
-        'floorModel': floor,
-        'ceilingModel': ceiling,
-        'wallModel': walls[0],
+        'wallModel': 0,
         'doors': [
             {
                 'x': 3,
@@ -117,9 +107,7 @@ export const rooms: Room[] = [
     {
         'origin': [12, 0, 12],
         'size': [6, 6, 3],
-        'floorModel': floor,
-        'ceilingModel': ceiling,
-        'wallModel': walls[0],
+        'wallModel': 0,
         'doors': [
             {
                 'x': 1,
@@ -138,9 +126,7 @@ export const rooms: Room[] = [
     {
         'origin': [12, 0, 5],
         'size': [6, 4, 3],
-        'floorModel': floor,
-        'ceilingModel': ceiling,
-        'wallModel': walls[0],
+        'wallModel': 4,
         'doors': [
             {
                 'x': 1,
@@ -164,9 +150,7 @@ export const rooms: Room[] = [
     {
         'origin': [12, 0, 0],
         'size': [5, 5, 3],
-        'floorModel': floor,
-        'ceilingModel': ceiling,
-        'wallModel': walls[0],
+        'wallModel': 0,
         'doors': [
             {
                 'x': 2,
@@ -180,9 +164,7 @@ export const rooms: Room[] = [
     {
         'origin': [18, 0, 4],
         'size': [5, 5, 3],
-        'floorModel': floor,
-        'ceilingModel': ceiling,
-        'wallModel': walls[0],
+        'wallModel': 0,
         'doors': [
             {
                 'x': 0,
@@ -201,9 +183,7 @@ export const rooms: Room[] = [
     {
         'origin': [18, 0, 9],
         'size': [5, 3, 3],
-        'floorModel': floor,
-        'ceilingModel': ceiling,
-        'wallModel': walls[0],
+        'wallModel': 0,
         'doors': [
             {
                 'x': 3,
@@ -217,9 +197,7 @@ export const rooms: Room[] = [
     {
         'origin': [18, 0, 12],
         'size': [5, 3, 3],
-        'floorModel': floor,
-        'ceilingModel': ceiling,
-        'wallModel': walls[0],
+        'wallModel': 0,
         'doors': [
             {
                 'x': 0,

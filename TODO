@@ -40,7 +40,13 @@ Must Have:
         ☐ Activate mouseholes in adjacent rooms based on this.
 
 Should Have:
+    ☐ Title Screen
+    ☐ Game Over Screen
+    ☐ Some indication of time left every now and then
+        Just a text in your face that says "5 minutes left" etc.
     ☐ Add furniture
+    ☐ Add more lights (automatically per room)
+        if too much, enable them similar to the mouseholes
     ☐ Touch the bomb for 5 seconds to win
     ☐ Be able to restart the game without refresh
     ☐ Crappy audio (is better then no audio)
@@ -49,6 +55,7 @@ Should Have:
 
 Could Have:
     ☐ post processing effects (SSAO, Bloom)
+    ☐ different floors
     ☐ Destructible environments, like doors that block rooms
     ☐ Make mice attack faster and pathfind to you, beyond rooms and line of sight.
     ☐ On top of that, add sneak mode to avoid detections, until line of sight.

@@ -2,7 +2,7 @@ import {VoxelEngine} from '../lib/voxelengine.js';
 import {addModelFromEncoded, Rotation} from '../lib/encoder.js';
 import {GameSystem} from '../systems/game.js';
 import {Room} from '../types/world-types.js';
-import {bomb, door, walls} from '../models.js';
+import {bomb, door, walls, furniture, floor, ceiling} from '../models.js';
 import {rooms} from '../map.js';
 import {DataOf} from '../lib/aframe-utils.js';
 import {Component} from 'aframe';
@@ -21,13 +21,8 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
     // place floor and ceiling tiles in the area
     for (let x = 0; x < w; x++) {
         for (let z = 0; z < d; z++) {
-            addModelFromEncoded(room.floorModel, engine, Rotation.None, new THREE.Vector3(ox + x, oy + 0, oz + z));
-            addModelFromEncoded(
-                room.ceilingModel,
-                engine,
-                Rotation.None,
-                new THREE.Vector3(ox + x, oy + (h - 1) + 0.2, oz + z)
-            );
+            addModelFromEncoded(floor, engine, Rotation.None, new THREE.Vector3(ox + x, oy + 0, oz + z));
+            addModelFromEncoded(ceiling, engine, Rotation.None, new THREE.Vector3(ox + x, oy + (h - 1) + 0.2, oz + z));
         }
     }
 
@@ -49,7 +44,7 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
             // local coords
             if (!doorAt(x, y, d) && !mouseHoleAt(x, y, d)) {
                 addModelFromEncoded(
-                    Array.isArray(room.wallModel) ? room.wallModel[0] : room.wallModel,
+                    walls[room.wallModel],
                     engine,
                     Rotation.Clockwise90,
                     new THREE.Vector3(ox + x, oy + y + 0.125, oz + d - 1)
@@ -63,7 +58,7 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
         for (let y = 0; y < h; y++) {
             if (!doorAt(x, y, 0) && !mouseHoleAt(x, y, 0)) {
                 addModelFromEncoded(
-                    Array.isArray(room.wallModel) ? room.wallModel[0] : room.wallModel,
+                    walls[room.wallModel],
                     engine,
                     Rotation.Clockwise270,
                     new THREE.Vector3(ox + x, oy + y + 0.125, oz + 0)
@@ -77,7 +72,7 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
         for (let y = 0; y < h; y++) {
             if (!doorAt(0, y, z) && !mouseHoleAt(0, y, z)) {
                 addModelFromEncoded(
-                    Array.isArray(room.wallModel) ? room.wallModel[0] : room.wallModel,
+                    walls[room.wallModel],
                     engine,
                     Rotation.None,
                     new THREE.Vector3(ox + 0, oy + y + 0.125, oz + z)
@@ -91,7 +86,7 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
         for (let y = 0; y < h; y++) {
             if (!doorAt(w, y, z) && !mouseHoleAt(w, y, z)) {
                 addModelFromEncoded(
-                    Array.isArray(room.wallModel) ? room.wallModel[0] : room.wallModel,
+                    walls[room.wallModel],
                     engine,
                     Rotation.Clockwise180,
                     new THREE.Vector3(ox + w - 1, oy + y + 0.125, oz + z)
@@ -146,7 +141,7 @@ function buildRoom(engine: VoxelEngine, room: Room, occ: Uint8Array, gridW: numb
                 z: cz,
                 rotation: d.rotation,
             });
-            addModelFromEncoded(walls[1], engine, d.rotation, new THREE.Vector3(cx, 0.125, cz));
+            addModelFromEncoded(walls[room.wallModel + 1], engine, d.rotation, new THREE.Vector3(cx, 0.125, cz));
         }
     }
 

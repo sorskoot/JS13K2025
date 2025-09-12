@@ -20,9 +20,7 @@ export type HoleSpec = {
 export type Room = {
     origin: vec3; // world origin for the room (lower-left corner)
     size: vec3; // in voxels/meters in X, Y, Z
-    floorModel: string;
-    ceilingModel: string;
-    wallModel: string; // single or array indexed by side if needed
+    wallModel: number; // single or array indexed by side if needed
     doors?: DoorSpec[];
     mouseHoles?: HoleSpec[];
     contents?: {model: string; pos: vec3; rot?: Rotation}[]; // chairs, bombs etc
