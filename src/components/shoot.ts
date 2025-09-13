@@ -2,6 +2,7 @@ import type {Component, Entity} from 'aframe';
 import type {DataOf} from '../lib/aframe-utils.js';
 import {GameSystem} from '../systems/game.js';
 import {ButtonEvent} from '../types/world-types.js';
+import {sound} from '../lib/sound.js';
 
 const schema = {} as const;
 
@@ -37,6 +38,7 @@ AFRAME.registerComponent('shoot', {
         this._buttonDown = (event: Event) => {
             const buttonEvent = event as CustomEvent<ButtonEvent>;
             if (buttonEvent.detail.id !== 0) return; // only respond to trigger button
+            sound.play(0);
             this.el.object3D.getWorldPosition(from);
             from.y += 0.07;
             this.el.object3D.getWorldDirection(dir);
@@ -52,6 +54,9 @@ AFRAME.registerComponent('shoot', {
             }, 50);
 
             if ((int?.object as any).el.classList?.contains('m')) {
+                setTimeout(() => {
+                    sound.play(1);
+                }, 100);
                 let explosion = document.createElement('a-entity');
                 explosion.setAttribute('position', int!.point);
                 explosion.setAttribute('particles', {});

@@ -23,9 +23,9 @@ Must Have:
     Win state:
         ✔ touch the cheese-bomb @done(25-09-12 17:41)
     Lose state:
-        ☐ Run out of lives (9)
+        ✔ Run out of lives (9) @done(25-09-13 07:27)
         ✔ Run out of time (10 minutes) @done(25-09-12 17:41)
-    ☐ Bites. When a mouse bites you, you lose a life.
+    ✔ Bites. When a mouse bites you, you lose a life. @done(25-09-13 07:27)
         ✔ After biting the mouse runs away. @done(25-09-12 17:42)
     ✔ Shoot Mice @done(25-09-11 22:32)
     ✔ Block Mouseholes @done(25-09-12 15:24)
@@ -36,17 +36,17 @@ Must Have:
         ✔ Spawning mice at holes @done(25-09-10 15:35)
         ✔ Colliding with walls need to be beter. @done(25-09-12 00:25)
             ~ Right now you stay too far off the walls
-    ☐ A global function that returns the room number based on position.
+    ✔ A global function that returns the room number based on position. @done(25-09-13 07:27)
         ☐ Activate mouseholes in adjacent rooms based on this.
 
 Should Have:
     ☐ Title Screen
     ☐ Game Over Screen
-    ☐ Some indication of time left every now and then
+    ✔ Some indication of time left every now and then @done(25-09-13 07:27)
         Just a text in your face that says "5 minutes left" etc.
-    ☐ Add furniture
-    ☐ Add more lights (automatically per room)
-        if too much, enable them similar to the mouseholes
+    ✔ Add furniture @done(25-09-13 07:27)
+    ✔ Add more lights (automatically per room) @done(25-09-13 07:27)
+        ✔ if too much, enable them similar to the mouseholes @done(25-09-13 07:27)
     ☐ Touch the bomb for 5 seconds to win
     ☐ Be able to restart the game without refresh
     ☐ Crappy audio (is better then no audio)

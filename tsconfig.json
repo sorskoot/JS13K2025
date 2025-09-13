@@ -2,7 +2,7 @@
     "compilerOptions": {
         "forceConsistentCasingInFileNames": true,
         "pretty": true,
-        "allowJs": false,
+        "allowJs": true,
         "strict": true,
         "noEmit": true,
         "noImplicitAny": true,

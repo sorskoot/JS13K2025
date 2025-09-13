@@ -8,6 +8,7 @@ import {VoxelEngine} from '../lib/voxelengine.js';
 import {plank} from '../models.js';
 import {BombComponent} from '../components/bomb.js';
 import {neighbors, rooms} from '../map.js';
+import {InitAudio, sound} from '../lib/sound.js';
 
 declare const DEBUG: boolean;
 const schema = {} as const;
@@ -74,6 +75,7 @@ AFRAME.registerSystem('game', {
         this.text = this.el.sceneEl!.querySelector('#t')!;
         this.text.setAttribute('visible', 'false');
         this.el.sceneEl!.addEventListener('enter-vr', () => {
+            InitAudio();
             this.el.sceneEl!.querySelector('#title')!.setAttribute('visible', 'false');
             this.changeGameState(GameState.Playing);
         });
@@ -112,6 +114,7 @@ AFRAME.registerSystem('game', {
         if (this._lives <= 0) {
             this.gameOver();
         } else {
+            sound.play(6);
             // Maybe flash the screen red or something
             this.notify(`Ouch! You have ${this._lives} lives left.`);
         }
@@ -180,7 +183,10 @@ AFRAME.registerSystem('game', {
         return x >= 0 && z >= 0 && x < g.w && z < g.d && g.occ[z * g.w + x] === 0;
     },
     addLamp(this: GameSystem, lamp: Entity) {
-        this._lamps.push(lamp);
+        const l = this._lamps.push(lamp);
+        if (l == 1) {
+            this._lamps[0].setAttribute('visible', 'true');
+        }
     },
     rayCastD(this: GameSystem, from: Vector3, dir: Vector3): Intersection | null {
         // Create raycaster (one-off, not continuous)
@@ -209,7 +215,7 @@ AFRAME.registerSystem('game', {
     },
     gameOver(this: GameSystem) {
         this.changeGameState(GameState.GameOver);
-
+        sound.play(2);
         this.el.sceneEl!.querySelector('#go')!.setAttribute('visible', 'true');
         this._coroutines.forEach((id) => {
             this._coroutineSystem.stopCoroutine(id);
@@ -275,6 +281,7 @@ AFRAME.registerSystem('game', {
         const h = this._mouseHoles.get(key);
 
         if (h) {
+            sound.play(3);
             const p = document.createElement('a-entity');
             const pe = new VoxelEngine({metersX: 1, metersY: 1, metersZ: 1}); // Small engine for plank
             addModelFromEncoded(plank, pe, h.rotation, new THREE.Vector3());
@@ -310,6 +317,7 @@ AFRAME.registerSystem('game', {
         yield* waitForSeconds(Math.random() * 2);
         while (true) {
             // spawn mice at the set interval until the hole is blocked
+            sound.play(7);
             const mouseEl = document.createElement('a-entity');
             mouseEl.setAttribute('mixin', 'ms');
             mouseEl.classList.add('r', 'm'); // make raycastable, and "m" for mouse
@@ -318,7 +326,7 @@ AFRAME.registerSystem('game', {
             mouseEl.setAttribute('position', {x: hole.x + 0.5, y: 0, z: hole.z + 0.5});
             this.el.sceneEl?.appendChild(mouseEl);
             this._objs.push(mouseEl.object3D);
-            yield* waitForSeconds(hole.spawnRate || 8);
+            yield* waitForSeconds(hole.spawnRate || 5);
         }
     },
 });
